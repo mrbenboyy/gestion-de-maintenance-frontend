@@ -1,5 +1,6 @@
 import React from "react";
 import Extincteur from "../images/extincteur.png";
+import { Link } from "react-router-dom";
 
 const Login = () => {
   return (
@@ -48,6 +49,18 @@ const Login = () => {
             Connexion
           </button>
         </form>
+
+        <div className="mt-4 text-center">
+          <p className="text-sm text-gray-600">
+            Vous êtes un client ?{" "}
+            <Link
+              to="/client-login"
+              className="text-red-600 hover:underline font-medium"
+            >
+              Connectez-vous ici
+            </Link>
+          </p>
+        </div>
 
         <div className="flex justify-center mt-6">
           <img src={Extincteur} alt="Extincteur" className="h-24" />
