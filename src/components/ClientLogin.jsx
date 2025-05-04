@@ -25,18 +25,6 @@ const ClientLogin = () => {
         <form>
           <div className="mb-4">
             <label className="block text-sm font-medium mb-1">
-              Nom de l'entreprise
-            </label>
-            <input
-              type="text"
-              placeholder="Entrez le nom de votre société"
-              required
-              className="w-full px-4 py-2 border rounded-md bg-gray-50 focus:outline-none focus:ring-2 focus:ring-red-500"
-            />
-          </div>
-
-          <div className="mb-4">
-            <label className="block text-sm font-medium mb-1">
               Email professionnel
             </label>
             <input
