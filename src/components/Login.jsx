@@ -23,6 +23,8 @@ const Login = () => {
             </label>
             <input
               type="email"
+              placeholder="Veuillez entrer votre adresse email"
+              required
               className="w-full px-4 py-2 border rounded-md bg-gray-100 focus:outline-none focus:ring-2 focus:ring-red-500"
             />
           </div>
@@ -33,6 +35,8 @@ const Login = () => {
             </label>
             <input
               type="password"
+              placeholder="Veuillez entrer votre mot de passe"
+              required
               className="w-full px-4 py-2 border rounded-md bg-gray-100 focus:outline-none focus:ring-2 focus:ring-red-500"
             />
           </div>
