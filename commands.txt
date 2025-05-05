@@ -1,3 +1,5 @@
 npm install react-router-dom
 npm i axios
 npm i jwt-decode
+npm install react-icons
+npm install recharts lucide-react

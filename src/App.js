@@ -9,6 +9,10 @@ import ResponsableDashboard from "./components/ResponsableDashboard";
 import AssistanteDashboard from "./components/AssistanteDashboard";
 import TechnicienDashboard from "./components/TechnicienDashboard";
 import Unauthorized from "./components/Unauthorized";
+import Dashboard from "./pages/Dashboard";
+import Users from "./components/Users";
+import AddUser from "./pages/AddUser";
+import UserDetails from "./components/UserDetails";
 
 function App() {
   return (
@@ -20,7 +24,10 @@ function App() {
 
         {/* Routes protégées */}
         <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
-          <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/admin" element={<Dashboard />} />
+          <Route path="/users" element={<Users />} />
+          <Route path="/add-user" element={<AddUser />} />
+          <Route path="/user-details" element={<UserDetails />} />
         </Route>
 
         <Route element={<ProtectedRoute allowedRoles={["technicien"]} />}>
