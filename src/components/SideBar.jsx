@@ -77,15 +77,6 @@ const Sidebar = ({ role = "admin" }) => {
         collapsed ? "w-16" : "w-64"
       }`}
     >
-      {/* Logo */}
-      <div className="p-6 flex justify-center items-center">
-        <img
-          src={Logo}
-          alt="Logo"
-          className={`${collapsed ? "h-10" : "h-28"}`}
-        />
-      </div>
-
       {/* Toggle button */}
       <button
         onClick={() => setCollapsed(!collapsed)}
@@ -93,6 +84,17 @@ const Sidebar = ({ role = "admin" }) => {
       >
         <Menu size={20} />
       </button>
+
+      {/* Logo */}
+      {!collapsed && (
+        <div className="p-6 flex justify-center items-center">
+          <img
+            src={Logo}
+            alt="Logo"
+            className="h-28" // Taille fixe quand la sidebar est étendue
+          />
+        </div>
+      )}
 
       {/* Navigation principale */}
       <div className="flex-1 px-3 py-2 space-y-1 overflow-y-auto">
