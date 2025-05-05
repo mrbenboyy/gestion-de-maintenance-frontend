@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import Sidebar from "../components/SideBar";
 import DashboardHeader from "../components/DashboardHeader";
 import UserCard from "../components/UserCard";
+import ConfirmationModal from "../components/ConfirmationModal";
 import { useNavigate } from "react-router-dom";
 import api from "../utils/api";
 
@@ -11,6 +12,8 @@ const Users = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState(null);
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -30,8 +33,10 @@ const Users = () => {
     try {
       await api.delete(`/users/${userId}`);
       setUsers(users.filter((user) => user.id !== userId));
+      setShowDeleteModal(false);
     } catch (err) {
       setError(err.message);
+      setShowDeleteModal(false);
     }
   };
 
@@ -44,6 +49,15 @@ const Users = () => {
       <Sidebar role="admin" />
       <div className="flex-1 bg-gray-100 min-h-screen">
         <DashboardHeader />
+
+        <ConfirmationModal
+          isOpen={showDeleteModal}
+          onClose={() => setShowDeleteModal(false)}
+          onConfirm={() => handleDelete(selectedUserId)}
+          title="Confirmer la suppression"
+          message="Êtes-vous sûr de vouloir supprimer cet utilisateur ? Cette action est irréversible."
+        />
+
         <div className="flex justify-between items-center px-6 py-4">
           <h2 className="text-2xl font-bold">Utilisateurs</h2>
           <button
@@ -73,7 +87,14 @@ const Users = () => {
             <div className="text-red-500">{error}</div>
           ) : (
             filteredUsers.map((user) => (
-              <UserCard key={user.id} user={user} onDelete={handleDelete} />
+              <UserCard
+                key={user.id}
+                user={user}
+                onDelete={() => {
+                  setSelectedUserId(user.id);
+                  setShowDeleteModal(true);
+                }}
+              />
             ))
           )}
         </div>

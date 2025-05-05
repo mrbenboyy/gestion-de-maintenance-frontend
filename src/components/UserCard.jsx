@@ -17,7 +17,7 @@ const UserCard = ({ user, onDelete }) => {
 
       {/* Trash Icon */}
       <button
-        onClick={() => onDelete(user.id)}
+        onClick={onDelete}
         className="absolute top-2 right-5 text-red-500 hover:text-red-700"
       >
         <FiTrash2 />
