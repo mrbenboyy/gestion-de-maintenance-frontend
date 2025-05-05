@@ -10,7 +10,7 @@ const UserCard = ({ user, onDelete }) => {
       {/* Edit Icon */}
       <button
         onClick={() => navigate(`/edit-user/${user.id}`)}
-        className="absolute top-2 left-2 text-blue-500 hover:text-blue-700"
+        className="absolute top-2 left-5 text-blue-500 hover:text-blue-700"
       >
         <FiEdit />
       </button>
@@ -18,7 +18,7 @@ const UserCard = ({ user, onDelete }) => {
       {/* Trash Icon */}
       <button
         onClick={() => onDelete(user.id)}
-        className="absolute top-2 right-2 text-red-500 hover:text-red-700"
+        className="absolute top-2 right-5 text-red-500 hover:text-red-700"
       >
         <FiTrash2 />
       </button>

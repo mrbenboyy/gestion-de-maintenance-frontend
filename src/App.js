@@ -11,6 +11,7 @@ import Unauthorized from "./components/Unauthorized";
 import Dashboard from "./pages/Dashboard";
 import Users from "./components/Users";
 import AddUser from "./pages/AddUser";
+import EditUser from "./pages/EditUser";
 
 function App() {
   return (
@@ -25,6 +26,7 @@ function App() {
           <Route path="/admin" element={<Dashboard />} />
           <Route path="/users" element={<Users />} />
           <Route path="/add-user" element={<AddUser />} />
+          <Route path="/edit-user/:id" element={<EditUser />} />
         </Route>
 
         <Route element={<ProtectedRoute allowedRoles={["technicien"]} />}>
