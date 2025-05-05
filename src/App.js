@@ -2,7 +2,6 @@ import "./App.css";
 import Login from "./components/Login";
 import { Navigate, Route, Routes } from "react-router-dom";
 import ClientLogin from "./components/ClientLogin";
-import AdminDashboard from "./components/AdminDashboard";
 import ClientDashboard from "./components/ClientDashboard";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ResponsableDashboard from "./components/ResponsableDashboard";
@@ -12,7 +11,6 @@ import Unauthorized from "./components/Unauthorized";
 import Dashboard from "./pages/Dashboard";
 import Users from "./components/Users";
 import AddUser from "./pages/AddUser";
-import UserDetails from "./components/UserDetails";
 
 function App() {
   return (
@@ -27,7 +25,6 @@ function App() {
           <Route path="/admin" element={<Dashboard />} />
           <Route path="/users" element={<Users />} />
           <Route path="/add-user" element={<AddUser />} />
-          <Route path="/user-details" element={<UserDetails />} />
         </Route>
 
         <Route element={<ProtectedRoute allowedRoles={["technicien"]} />}>
