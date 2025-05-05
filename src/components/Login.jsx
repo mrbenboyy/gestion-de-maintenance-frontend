@@ -1,8 +1,43 @@
-import React from "react";
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import Extincteur from "../images/extincteur.png";
-import { Link } from "react-router-dom";
+import { loginUser } from "../services/authService";
 
 const Login = () => {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const navigate = useNavigate();
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const { token, users } = await loginUser(email, password);
+      console.log("Rôle reçu:", users.role); // Debug
+      localStorage.setItem("token", token);
+      localStorage.setItem("user", JSON.stringify(users));
+
+      switch (users.role) {
+        case "admin":
+          navigate("/admin");
+          break;
+        case "responsable_planning":
+          navigate("/responsable_planning");
+          break;
+        case "assistante":
+          navigate("/assistante");
+          break;
+        case "technicien":
+          navigate("/technicien");
+          break;
+        default:
+          navigate("/");
+      }
+    } catch (err) {
+      console.error("Erreur:", err); // Debug
+      setError(err.message || "Erreur de connexion");
+    }
+  };
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 px-4">
       <h1 className="text-3xl md:text-4xl font-bold text-red-600 mb-8">
@@ -17,13 +52,15 @@ const Login = () => {
           Veuillez entrer votre email et votre mot de passe pour continuer
         </p>
 
-        <form>
+        <form onSubmit={handleSubmit}>
           <div className="mb-4">
             <label className="block text-sm font-medium mb-1">
               Adresse email
             </label>
             <input
               type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               placeholder="Veuillez entrer votre adresse email"
               required
               className="w-full px-4 py-2 border rounded-md bg-gray-100 focus:outline-none focus:ring-2 focus:ring-red-500"
@@ -36,11 +73,15 @@ const Login = () => {
             </label>
             <input
               type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
               placeholder="Veuillez entrer votre mot de passe"
               required
               className="w-full px-4 py-2 border rounded-md bg-gray-100 focus:outline-none focus:ring-2 focus:ring-red-500"
             />
           </div>
+
+          {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
 
           <button
             type="submit"
