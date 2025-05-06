@@ -1,18 +1,64 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Search, Filter, Edit, Trash2 } from "lucide-react";
 import ClientCard from "./ClientCard";
 import Sidebar from "./SideBar";
 import DashboardHeader from "./DashboardHeader";
 import { useNavigate } from "react-router-dom";
+import api from "../utils/api";
+import ConfirmationModal from "./ConfirmationModal";
 
 const ClientsPage = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [filterValue, setFilterValue] = useState("Contrat");
+  const [clients, setClients] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [selectedClientId, setSelectedClientId] = useState(null);
 
-  const handleSearch = (e) => {
-    setSearchTerm(e.target.value);
+  useEffect(() => {
+    const fetchClients = async () => {
+      try {
+        const response = await api.get("/clients");
+        setClients(response.data);
+        setLoading(false);
+      } catch (err) {
+        setError(err.message);
+        setLoading(false);
+      }
+    };
+    fetchClients();
+  }, []);
+
+  const handleDelete = async () => {
+    try {
+      await api.delete(`/clients/${selectedClientId}`);
+      setClients(clients.filter((client) => client.id !== selectedClientId));
+      setShowDeleteModal(false);
+    } catch (err) {
+      setError("Erreur lors de la suppression");
+      setShowDeleteModal(false);
+    }
   };
+
+  const filteredClients = clients.filter((client) => {
+    const searchMatch = client.nom
+      ?.toLowerCase()
+      .includes(searchTerm.toLowerCase());
+
+    switch (filterValue) {
+      case "Contrat":
+        return searchMatch && client.contrat;
+      case "Nom":
+        return searchMatch;
+      case "Date":
+        // Ajouter la logique de filtrage par date si nécessaire
+        return searchMatch;
+      default:
+        return searchMatch;
+    }
+  });
 
   return (
     <div className="flex h-screen bg-gray-100">
@@ -21,11 +67,19 @@ const ClientsPage = () => {
       <div className="flex-1 flex flex-col overflow-hidden">
         <DashboardHeader />
 
+        <ConfirmationModal
+          isOpen={showDeleteModal}
+          onClose={() => setShowDeleteModal(false)}
+          onConfirm={handleDelete}
+          title="Confirmer la suppression"
+          message="Êtes-vous sûr de vouloir supprimer ce client ? Cette action est irréversible."
+        />
+
         <main className="flex-1 overflow-y-auto p-6">
           <div className="max-w-7xl mx-auto">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
               <h1 className="text-2xl font-bold text-gray-800 mb-4 md:mb-0">
-                Clients
+                Clients ({filteredClients.length})
               </h1>
 
               <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
@@ -38,7 +92,7 @@ const ClientsPage = () => {
                     placeholder="Chercher client"
                     className="pl-10 pr-4 py-2 w-full rounded-md border border-gray-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
                     value={searchTerm}
-                    onChange={handleSearch}
+                    onChange={(e) => setSearchTerm(e.target.value)}
                   />
                 </div>
 
@@ -87,11 +141,37 @@ const ClientsPage = () => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              <ClientCard
-                name="Total Energies"
-                email="guillaume@totalenergy.com"
-                logoSrc="/images/25d35f7e-8be2-4ad0-aabc-0e5daabd349e.png"
-              />
+              {loading ? (
+                <div className="text-center text-gray-500">
+                  Chargement en cours...
+                </div>
+              ) : error ? (
+                <div className="text-red-500 p-4 border rounded bg-red-50">
+                  Erreur : {error}
+                </div>
+              ) : filteredClients.length > 0 ? (
+                filteredClients.map((client) => (
+                  <ClientCard
+                    key={client.id}
+                    name={client.nom}
+                    email={client.email}
+                    logoSrc={
+                      client.image
+                        ? `${process.env.REACT_APP_API_URL}${client.image}`
+                        : null
+                    }
+                    onEdit={() => navigate(`/edit-client/${client.id}`)}
+                    onDelete={() => {
+                      setSelectedClientId(client.id);
+                      setShowDeleteModal(true);
+                    }}
+                  />
+                ))
+              ) : (
+                <div className="text-gray-500 p-4 border rounded bg-gray-50">
+                  Aucun client trouvé
+                </div>
+              )}
             </div>
           </div>
         </main>
