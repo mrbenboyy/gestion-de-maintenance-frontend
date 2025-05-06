@@ -149,6 +149,9 @@ const AddClient = () => {
                   <p className="text-red-500 text-sm mt-1">{errors.image}</p>
                 )}
               </label>
+              <span className="text-sm text-gray-500 mt-1">
+                Formats acceptés: JPG, PNG, SVG (max 5MB)
+              </span>
             </div>
 
             {/* Grille dynamique avec gestion d'erreurs */}

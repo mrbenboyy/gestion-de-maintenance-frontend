@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { Edit, Trash2 } from "lucide-react";
 import api from "../utils/api";
 import Sidebar from "../components/SideBar";
@@ -8,8 +8,9 @@ import ConfirmationModal from "../components/ConfirmationModal";
 
 const ClientDetails = () => {
   const { id } = useParams();
+  const location = useLocation();
   const navigate = useNavigate();
-  const [client, setClient] = useState(null);
+  const [client, setClient] = useState(location.state?.client || null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -17,15 +18,27 @@ const ClientDetails = () => {
   useEffect(() => {
     const fetchClient = async () => {
       try {
+        // Si on a déjà les données en cache, on rafraîchit en arrière-plan
         const response = await api.get(`/clients/${id}`);
-        setClient(response.data);
-        setLoading(false);
+        if (
+          !location.state?.client ||
+          response.data.updated_at !== client?.updated_at
+        ) {
+          setClient(response.data);
+        }
       } catch (err) {
         setError("Erreur lors du chargement du client");
+      } finally {
         setLoading(false);
       }
     };
-    fetchClient();
+
+    // Si pas de données en cache, on charge normalement
+    if (!location.state?.client) {
+      fetchClient();
+    } else {
+      setLoading(false);
+    }
   }, [id]);
 
   const handleDelete = async () => {
@@ -39,7 +52,12 @@ const ClientDetails = () => {
     }
   };
 
-  if (loading) return <div>Chargement...</div>;
+  if (loading)
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-red-500"></div>
+      </div>
+    );
   if (error) return <div className="text-red-500">{error}</div>;
 
   return (
