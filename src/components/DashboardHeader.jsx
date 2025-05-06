@@ -1,25 +1,67 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
+import api from "../utils/api";
 
-const DashboardHeader = () => (
-  <div className="flex justify-between items-center px-6 py-4 border-b bg-white">
-    <input
-      type="text"
-      placeholder="Search"
-      className="border rounded px-4 py-1 w-1/3"
-    />
-    <div className="flex items-center gap-4">
-      <span>English</span>
-      <img
-        src="https://randomuser.me/api/portraits/women/1.jpg"
-        alt="Profile"
-        className="h-8 w-8 rounded-full"
-      />
-      <div>
-        <p className="text-sm font-semibold">Moni Roy</p>
-        <p className="text-xs text-gray-500">Admin</p>
+const DashboardHeader = () => {
+  const [userData, setUserData] = useState(() => {
+    const storedUser = JSON.parse(localStorage.getItem("user"));
+    return storedUser || null;
+  });
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const storedUser = JSON.parse(localStorage.getItem("user"));
+        if (storedUser?.id) {
+          const response = await api.get(`/users/${storedUser.id}`);
+          setUserData({
+            ...response.data,
+            image: response.data.image
+              ? `${process.env.REACT_APP_API_URL}${response.data.image}`
+              : null,
+          });
+          localStorage.setItem(
+            "user",
+            JSON.stringify({
+              ...storedUser,
+              ...response.data,
+            })
+          );
+        }
+      } catch (error) {
+        console.error("Erreur de mise à jour des données:", error);
+      }
+    };
+
+    fetchUserData();
+  }, []);
+
+  return (
+    <div className="flex justify-end items-center px-6 py-4 border-b bg-white">
+      <div className="flex items-center gap-4">
+        {userData?.image ? (
+          <img
+            src={userData.image}
+            alt="Profile"
+            className="h-10 w-10 rounded-full object-cover border-2 border-red-100"
+          />
+        ) : (
+          <div className="h-10 w-10 rounded-full bg-red-100 flex items-center justify-center">
+            <span className="text-red-600 font-bold">
+              {userData?.nom?.charAt(0) || "U"}
+            </span>
+          </div>
+        )}
+        <div>
+          <p className="text-sm font-semibold">
+            {userData?.nom || "Utilisateur"}
+          </p>
+          <p className="text-xs text-gray-500 capitalize">
+            {userData?.role?.replace("_", " ") || "Rôle inconnu"}
+          </p>
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 export default DashboardHeader;
