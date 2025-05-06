@@ -153,6 +153,7 @@ const ClientsPage = () => {
                 filteredClients.map((client) => (
                   <ClientCard
                     key={client.id}
+                    onViewDetails={() => navigate(`/clients/${client.id}`)}
                     name={client.nom}
                     email={client.email}
                     logoSrc={

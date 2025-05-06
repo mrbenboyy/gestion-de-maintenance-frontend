@@ -15,6 +15,7 @@ import EditUser from "./pages/EditUser";
 import ClientsPage from "./components/ClientsPage";
 import AddClient from "./pages/AddClient";
 import EditClient from "./pages/EditClient";
+import ClientDetails from "./components/ClientDetails";
 
 function App() {
   return (
@@ -33,6 +34,7 @@ function App() {
           <Route path="/clients" element={<ClientsPage />} />
           <Route path="/add-client" element={<AddClient />} />
           <Route path="/edit-client/:id" element={<EditClient />} />
+          <Route path="/clients/:id" element={<ClientDetails />} />
         </Route>
 
         <Route element={<ProtectedRoute allowedRoles={["technicien"]} />}>
