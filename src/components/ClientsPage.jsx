@@ -3,8 +3,10 @@ import { Search, Filter, Edit, Trash2 } from "lucide-react";
 import ClientCard from "./ClientCard";
 import Sidebar from "./SideBar";
 import DashboardHeader from "./DashboardHeader";
+import { useNavigate } from "react-router-dom";
 
 const ClientsPage = () => {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [filterValue, setFilterValue] = useState("Contrat");
 
@@ -74,7 +76,10 @@ const ClientsPage = () => {
                     </div>
                   </div>
 
-                  <button className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md transition-colors">
+                  <button
+                    onClick={() => navigate("/add-client")}
+                    className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md transition-colors"
+                  >
                     Ajouter client
                   </button>
                 </div>
