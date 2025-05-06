@@ -3,3 +3,4 @@ npm i axios
 npm i jwt-decode
 npm install react-icons
 npm install recharts lucide-react
+npm install leaflet react-leaflet

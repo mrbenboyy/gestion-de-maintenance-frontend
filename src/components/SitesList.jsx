@@ -3,8 +3,10 @@ import { Link } from "react-router-dom";
 import { Edit, Trash2, Filter, ArrowLeft, ArrowRight } from "lucide-react";
 import DashboardHeader from "../components/DashboardHeader";
 import Sidebar from "../components/SideBar";
+import { useNavigate } from "react-router-dom";
 
 const SitesList = () => {
+  const navigate = useNavigate();
   const [sites] = useState([
     {
       id: 1,
@@ -27,7 +29,10 @@ const SitesList = () => {
           <div className="bg-white rounded-lg shadow p-6">
             <div className="flex items-center justify-between mb-6">
               <h1 className="text-2xl font-bold">Sites</h1>
-              <button className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md transition-colors">
+              <button
+                onClick={() => navigate("/sites/ajouter")}
+                className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md transition-colors"
+              >
                 Ajouter site
               </button>
             </div>
