@@ -17,7 +17,6 @@ const ClientCard = ({ name, email, logoSrc, onEdit, onDelete }) => {
           )}
         </div>
 
-        {/* Ajout de l'email sous le nom */}
         <div className="text-center">
           <h3 className="font-medium text-gray-900">{name}</h3>
           {email && (

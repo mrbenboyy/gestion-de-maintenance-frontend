@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Search, Filter, Edit, Trash2 } from "lucide-react";
+import { Search, Filter } from "lucide-react";
 import ClientCard from "./ClientCard";
 import Sidebar from "./SideBar";
 import DashboardHeader from "./DashboardHeader";
