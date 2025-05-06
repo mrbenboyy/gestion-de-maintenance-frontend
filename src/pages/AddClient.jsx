@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Sidebar from "../components/SideBar";
 import DashboardHeader from "../components/DashboardHeader";
 import { FiArrowLeft, FiCamera } from "react-icons/fi";
@@ -19,54 +19,87 @@ const AddClient = () => {
   });
   const [image, setImage] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [errors, setErrors] = useState([]);
+  const [errors, setErrors] = useState({});
+  const [isDirty, setIsDirty] = useState(false);
+
+  // Validation en temps réel
+  useEffect(() => {
+    if (isDirty) {
+      validateForm();
+    }
+  }, [form, isDirty]);
 
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
+    setIsDirty(true);
   };
 
   const handleImageUpload = (e) => {
-    if (e.target.files[0]) {
-      setImage(e.target.files[0]);
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Validation de l'image
+    if (!file.type.startsWith("image/")) {
+      setErrors((prev) => ({ ...prev, image: "Format d'image non supporté" }));
+      return;
     }
+    if (file.size > 5 * 1024 * 1024) {
+      setErrors((prev) => ({
+        ...prev,
+        image: "L'image doit faire moins de 2MB",
+      }));
+      return;
+    }
+
+    setImage(file);
+    setErrors((prev) => ({ ...prev, image: null }));
   };
 
   const validateForm = () => {
-    const newErrors = [];
-    if (!form.nom) newErrors.push("Le nom est obligatoire");
-    if (!form.telephone) newErrors.push("Le téléphone est obligatoire");
-    if (!form.adresse) newErrors.push("L'adresse est obligatoire");
-    if (!form.email) newErrors.push("L'email est obligatoire");
-    if (!form.mot_de_passe) newErrors.push("Le mot de passe est obligatoire");
-    return newErrors;
+    const newErrors = {};
+
+    if (!form.nom.trim()) newErrors.nom = "Le nom est obligatoire";
+    if (!form.telephone.trim())
+      newErrors.telephone = "Le téléphone est obligatoire";
+    if (!form.adresse.trim()) newErrors.adresse = "L'adresse est obligatoire";
+
+    if (!/^\S+@\S+\.\S+$/.test(form.email)) {
+      newErrors.email = "Email invalide";
+    }
+
+    if (form.mot_de_passe.length < 6) {
+      newErrors.mot_de_passe =
+        "Le mot de passe doit contenir au moins 6 caractères";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const validationErrors = validateForm();
-    if (validationErrors.length > 0) {
-      setErrors(validationErrors);
-      return;
-    }
+    if (!validateForm()) return;
 
     setLoading(true);
-    setErrors([]);
-
     const formData = new FormData();
+
+    // Construction dynamique du FormData
     Object.entries(form).forEach(([key, value]) => {
       formData.append(key, value);
     });
+
     if (image) formData.append("image", image);
 
     try {
       await api.post("/clients", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
+        headers: { "Content-Type": "multipart/form-data" },
       });
       navigate("/clients");
     } catch (err) {
-      setErrors([err.response?.data?.error || "Erreur lors de l'ajout"]);
+      const apiError = err.response?.data?.error || "Erreur lors de l'ajout";
+      setErrors((prev) => ({ ...prev, api: apiError }));
+    } finally {
       setLoading(false);
     }
   };
@@ -89,7 +122,7 @@ const AddClient = () => {
             onSubmit={handleSubmit}
             className="bg-white rounded-xl shadow-md p-8 max-w-4xl mx-auto"
           >
-            {/* Section Image */}
+            {/* Section Image avec gestion d'erreur */}
             <div className="flex flex-col items-center mb-8">
               <label className="cursor-pointer">
                 <input
@@ -112,90 +145,34 @@ const AddClient = () => {
                 <span className="text-sm text-blue-600 mt-2 hover:underline">
                   {image ? "Changer la photo" : "Upload Photo"}
                 </span>
+                {errors.image && (
+                  <p className="text-red-500 text-sm mt-1">{errors.image}</p>
+                )}
               </label>
             </div>
 
-            {/* Champs du formulaire */}
+            {/* Grille dynamique avec gestion d'erreurs */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm mb-1">
-                  Nom de l'entreprise*
-                </label>
-                <input
-                  type="text"
-                  name="nom"
-                  placeholder="Nom du client"
-                  value={form.nom}
-                  onChange={handleChange}
-                  className="w-full border rounded px-4 py-2"
-                  required
-                />
-              </div>
+              {Object.entries(form).map(([name, value]) => {
+                if (name === "contrat" || name === "sous_type_contrat")
+                  return null;
 
-              <div>
-                <label className="block text-sm mb-1">Téléphone*</label>
-                <input
-                  type="tel"
-                  name="telephone"
-                  placeholder="Numéro de téléphone"
-                  value={form.telephone}
-                  onChange={handleChange}
-                  className="w-full border rounded px-4 py-2"
-                  required
-                />
-              </div>
+                return (
+                  <div key={name}>
+                    <label className="block text-sm mb-1">
+                      {getLabel(name)} {name !== "fax" && "*"}
+                    </label>
+                    {renderInput(name, value)}
+                    {errors[name] && (
+                      <p className="text-red-500 text-sm mt-1">
+                        {errors[name]}
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
 
-              <div>
-                <label className="block text-sm mb-1">Adresse*</label>
-                <input
-                  type="text"
-                  name="adresse"
-                  placeholder="Adresse complète"
-                  value={form.adresse}
-                  onChange={handleChange}
-                  className="w-full border rounded px-4 py-2"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm mb-1">Email*</label>
-                <input
-                  type="email"
-                  name="email"
-                  placeholder="Adresse email"
-                  value={form.email}
-                  onChange={handleChange}
-                  className="w-full border rounded px-4 py-2"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm mb-1">Mot de passe*</label>
-                <input
-                  type="password"
-                  name="mot_de_passe"
-                  placeholder="••••••••"
-                  value={form.mot_de_passe}
-                  onChange={handleChange}
-                  className="w-full border rounded px-4 py-2"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm mb-1">Fax</label>
-                <input
-                  type="text"
-                  name="fax"
-                  placeholder="Numéro de fax"
-                  value={form.fax}
-                  onChange={handleChange}
-                  className="w-full border rounded px-4 py-2"
-                />
-              </div>
-
+              {/* Champs de sélection */}
               <div>
                 <label className="block text-sm mb-1">Type de contrat*</label>
                 <select
@@ -203,7 +180,6 @@ const AddClient = () => {
                   value={form.contrat}
                   onChange={handleChange}
                   className="w-full border rounded px-4 py-2"
-                  required
                 >
                   <option value="SAV">SAV</option>
                   <option value="Detection">Détection</option>
@@ -219,7 +195,6 @@ const AddClient = () => {
                   value={form.sous_type_contrat}
                   onChange={handleChange}
                   className="w-full border rounded px-4 py-2"
-                  required
                 >
                   <option value="unitaire">Unitaire</option>
                   <option value="forfaitaire">Forfaitaire</option>
@@ -227,21 +202,25 @@ const AddClient = () => {
               </div>
             </div>
 
-            {errors.length > 0 && (
-              <div className="mt-4 text-red-500">
-                {errors.map((error, index) => (
-                  <p key={index}>{error}</p>
-                ))}
-              </div>
+            {/* Message d'erreur global */}
+            {errors.api && (
+              <div className="mt-4 text-red-500 text-center">{errors.api}</div>
             )}
 
             <div className="mt-8 text-center">
               <button
                 type="submit"
-                disabled={loading}
-                className="bg-red-500 text-white px-8 py-2 rounded-lg hover:bg-red-600 disabled:opacity-50"
+                disabled={loading || Object.keys(errors).length > 0}
+                className="bg-red-500 text-white px-8 py-2 rounded-lg hover:bg-red-600 disabled:opacity-50 transition-opacity"
               >
-                {loading ? "En cours..." : "Ajouter Client"}
+                {loading ? (
+                  <span className="flex items-center justify-center">
+                    <span className="animate-spin mr-2">&#9696;</span>
+                    En cours...
+                  </span>
+                ) : (
+                  "Ajouter Client"
+                )}
               </button>
             </div>
           </form>
@@ -249,6 +228,50 @@ const AddClient = () => {
       </div>
     </div>
   );
+
+  // Fonctions utilitaires
+  function getLabel(fieldName) {
+    const labels = {
+      nom: "Nom de l'entreprise",
+      telephone: "Téléphone",
+      adresse: "Adresse",
+      email: "Email",
+      mot_de_passe: "Mot de passe",
+      fax: "Fax",
+    };
+    return labels[fieldName];
+  }
+
+  function renderInput(name, value) {
+    const inputProps = {
+      className: `w-full border rounded px-4 py-2 ${
+        errors[name] ? "border-red-500" : ""
+      }`,
+      name,
+      value,
+      onChange: handleChange,
+      required: name !== "fax",
+    };
+
+    switch (name) {
+      case "mot_de_passe":
+        return <input type="password" {...inputProps} placeholder="••••••••" />;
+      case "email":
+        return (
+          <input
+            type="email"
+            {...inputProps}
+            placeholder="adresse@exemple.com"
+          />
+        );
+      case "telephone":
+        return (
+          <input type="tel" {...inputProps} placeholder="+212 600-000000" />
+        );
+      default:
+        return <input type="text" {...inputProps} />;
+    }
+  }
 };
 
 export default AddClient;
