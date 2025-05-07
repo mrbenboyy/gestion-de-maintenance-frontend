@@ -1,7 +1,13 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { CalendarIcon, ChevronDown } from "lucide-react";
+import api from "../utils/api";
+import { toast } from "react-toastify";
 
 const InterventionForm = () => {
+  const [clients, setClients] = useState([]);
+  const [sites, setSites] = useState([]);
+  const [techniciens, setTechniciens] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState({
     date_planifiee: "",
     client_id: "",
@@ -9,12 +15,107 @@ const InterventionForm = () => {
     technicien_id: "",
     type_visite: "premiere",
   });
+  const [selectedSite, setSelectedSite] = useState(null);
 
-  const handleSubmit = (e) => {
+  // Chargement des clients et techniciens au montage
+  useEffect(() => {
+    const fetchInitialData = async () => {
+      try {
+        const [clientsResponse, techniciensResponse] = await Promise.all([
+          api.get("/clients"),
+          api.get("/users/techniciens"),
+        ]);
+
+        setClients(clientsResponse.data);
+        setTechniciens(techniciensResponse.data);
+      } catch (error) {
+        toast.error("Erreur lors du chargement des données initiales");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchInitialData();
+  }, []);
+
+  // Chargement des sites quand le client change
+  useEffect(() => {
+    const fetchClientSites = async () => {
+      if (formData.client_id) {
+        try {
+          const response = await api.get(`/sites/client/${formData.client_id}`);
+          setSites(response.data);
+          // Réinitialiser le site sélectionné quand le client change
+          setFormData((prev) => ({ ...prev, site_id: "", technicien_id: "" }));
+        } catch (error) {
+          toast.error("Erreur lors du chargement des sites");
+        }
+      }
+    };
+
+    fetchClientSites();
+  }, [formData.client_id]);
+
+  useEffect(() => {
+    const fetchSiteDetails = async () => {
+      if (formData.site_id) {
+        try {
+          const response = await api.get(`/sites/${formData.site_id}`);
+          setSelectedSite(response.data);
+        } catch (error) {
+          toast.error("Erreur lors du chargement des détails du site");
+        }
+      }
+    };
+    fetchSiteDetails();
+  }, [formData.site_id]);
+
+  // Filtrer les techniciens par région
+  const filteredTechniciens = useMemo(() => {
+    if (!selectedSite?.region) return [];
+    return techniciens.filter(
+      (tech) =>
+        tech.region?.toLowerCase() === selectedSite.region?.toLowerCase()
+    );
+  }, [selectedSite, techniciens]);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Logique de soumission ici
-    console.log(formData);
+    try {
+      const userId = localStorage.getItem("userId");
+      await api.post("/interventions", {
+        ...formData,
+        status: "planifiee",
+        created_by: userId,
+      });
+      toast.success("Intervention planifiée avec succès !");
+      // Réinitialisation du formulaire
+      setFormData({
+        date_planifiee: "",
+        client_id: "",
+        site_id: "",
+        technicien_id: "",
+        type_visite: "premiere",
+      });
+      setSites([]);
+    } catch (error) {
+      console.error("Erreur complète:", error.response?.data);
+      toast.error(
+        error.response?.data?.error ||
+          error.response?.data?.message ||
+          "Erreur lors de la création"
+      );
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="text-center py-8">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-protec-red mx-auto"></div>
+        <p className="mt-4 text-gray-600">Chargement des données...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-3xl mx-auto">
@@ -57,9 +158,11 @@ const InterventionForm = () => {
                 }
               >
                 <option value="">Sélectionner le client</option>
-                <option value="1">Client 1</option>
-                <option value="2">Client 2</option>
-                <option value="3">Client 3</option>
+                {clients.map((client) => (
+                  <option key={client.id} value={client.id}>
+                    {client.nom}
+                  </option>
+                ))}
               </select>
               <ChevronDown className="absolute right-3 top-2.5 h-5 w-5 text-gray-400 pointer-events-none" />
             </div>
@@ -78,11 +181,18 @@ const InterventionForm = () => {
                 onChange={(e) =>
                   setFormData({ ...formData, site_id: e.target.value })
                 }
+                disabled={!formData.client_id || sites.length === 0}
               >
-                <option value="">Sélectionner le site</option>
-                <option value="1">Site 1</option>
-                <option value="2">Site 2</option>
-                <option value="3">Site 3</option>
+                <option value="">
+                  {sites.length === 0
+                    ? "Aucun site disponible"
+                    : "Sélectionner le site"}
+                </option>
+                {sites.map((site) => (
+                  <option key={site.id} value={site.id}>
+                    {site.nom} - {site.adresse}
+                  </option>
+                ))}
               </select>
               <ChevronDown className="absolute right-3 top-2.5 h-5 w-5 text-gray-400 pointer-events-none" />
             </div>
@@ -101,11 +211,20 @@ const InterventionForm = () => {
                 onChange={(e) =>
                   setFormData({ ...formData, technicien_id: e.target.value })
                 }
+                disabled={!selectedSite}
               >
-                <option value="">Sélectionner le technicien</option>
-                <option value="1">Technicien 1</option>
-                <option value="2">Technicien 2</option>
-                <option value="3">Technicien 3</option>
+                <option value="">
+                  {!selectedSite
+                    ? "Sélectionnez d'abord un site"
+                    : filteredTechniciens.length === 0
+                    ? `Aucun technicien en ${selectedSite?.region}`
+                    : "Sélectionner le technicien"}
+                </option>
+                {filteredTechniciens.map((tech) => (
+                  <option key={tech.id} value={tech.id}>
+                    {tech.nom} ({tech.region} - {tech.depot})
+                  </option>
+                ))}
               </select>
               <ChevronDown className="absolute right-3 top-2.5 h-5 w-5 text-gray-400 pointer-events-none" />
             </div>
@@ -116,7 +235,7 @@ const InterventionForm = () => {
             <label className="block text-sm font-medium text-gray-700">
               Type de visite
             </label>
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
               {["premiere", "deuxieme", "curative"].map((type) => (
                 <button
                   key={type}
@@ -132,7 +251,7 @@ const InterventionForm = () => {
                 >
                   {type === "premiere" && "1ère visite"}
                   {type === "deuxieme" && "2ème visite"}
-                  {type === "curative" && "Curative"}
+                  {type === "curative" && "Visite curative"}
                 </button>
               ))}
             </div>
@@ -142,9 +261,10 @@ const InterventionForm = () => {
           <div className="pt-6">
             <button
               type="submit"
-              className="w-full bg-protec-red hover:bg-red-600 text-white font-medium py-2 px-4 rounded-md transition-colors"
+              className="w-full bg-protec-red hover:bg-red-600 text-white font-medium py-2 px-4 rounded-md transition-colors disabled:opacity-50"
+              disabled={loading}
             >
-              Créer l'intervention
+              {loading ? "Envoi en cours..." : "Créer l'intervention"}
             </button>
           </div>
         </form>
