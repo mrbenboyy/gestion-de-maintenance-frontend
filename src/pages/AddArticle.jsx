@@ -1,8 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Sidebar from "../components/SideBar";
 import DashboardHeader from "../components/DashboardHeader";
 import { FiArrowLeft, FiCamera } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
+import api from "../utils/api";
 
 const AddArticle = () => {
   const navigate = useNavigate();
@@ -14,18 +15,41 @@ const AddArticle = () => {
   });
   const [image, setImage] = useState(null);
   const [errors, setErrors] = useState({});
+  const [familles, setFamilles] = useState([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Charger les familles depuis l'API
+  useEffect(() => {
+    const loadFamilles = async () => {
+      try {
+        const response = await api.get("/familles");
+        setFamilles(response.data);
+      } catch (err) {
+        console.error("Erreur chargement familles:", err);
+        setErrors({ server: "Erreur lors du chargement des familles" });
+      }
+    };
+    loadFamilles();
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
+    setErrors((prev) => ({ ...prev, [name]: null }));
   };
 
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
+    // Validation de l'image
     if (!file.type.startsWith("image/")) {
       setErrors((prev) => ({ ...prev, image: "Format d'image non supporté" }));
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setErrors((prev) => ({ ...prev, image: "La taille maximale est 5MB" }));
       return;
     }
 
@@ -33,20 +57,68 @@ const AddArticle = () => {
     setErrors((prev) => ({ ...prev, image: null }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const newErrors = {};
+    setIsSubmitting(true);
+    setErrors({});
 
+    // Validation client
+    const newErrors = {};
     if (!form.code.trim()) newErrors.code = "Code obligatoire";
     if (!form.designation.trim())
       newErrors.designation = "Désignation obligatoire";
     if (!form.famille_id) newErrors.famille_id = "Famille obligatoire";
     if (form.stock < 0) newErrors.stock = "Stock invalide";
 
-    if (Object.keys(newErrors).length > 0) return setErrors(newErrors);
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      setIsSubmitting(false);
+      return;
+    }
 
-    // Navigation simulée
-    navigate("/stock/articles");
+    try {
+      const formData = new FormData();
+      formData.append("code", form.code);
+      formData.append("designation", form.designation);
+      formData.append("famille_id", form.famille_id);
+      formData.append("stock", form.stock);
+      if (image) formData.append("image", image);
+
+      const response = await api.post("/articles", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      if (response.data) {
+        navigate("/stock/articles");
+      }
+    } catch (err) {
+      let errorMessage = "Erreur lors de la création";
+
+      if (err.response) {
+        // Gestion des erreurs structurées du backend
+        if (err.response.data.errors) {
+          const backendErrors = err.response.data.errors.reduce(
+            (acc, error) => {
+              const [field, message] = error.split(" : ");
+              acc[field] = message;
+              return acc;
+            },
+            {}
+          );
+          setErrors(backendErrors);
+        } else {
+          errorMessage = err.response.data.error || errorMessage;
+          setErrors({ server: errorMessage });
+        }
+      }
+
+      // Nettoyer l'image en cas d'erreur
+      if (image) URL.revokeObjectURL(image);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -60,7 +132,7 @@ const AddArticle = () => {
             onClick={() => navigate(-1)}
             className="flex items-center text-gray-600 mb-6 hover:underline"
           >
-            <FiArrowLeft className="mr-2" /> Ajouter nouvel article
+            <FiArrowLeft className="mr-2" /> Retour à la liste
           </button>
 
           <form
@@ -75,6 +147,7 @@ const AddArticle = () => {
                   accept="image/*"
                   onChange={handleImageUpload}
                   className="hidden"
+                  disabled={isSubmitting}
                 />
                 <div className="w-24 h-24 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 text-3xl">
                   {image ? (
@@ -88,15 +161,18 @@ const AddArticle = () => {
                   )}
                 </div>
                 <span className="text-sm text-blue-600 mt-2 hover:underline">
-                  {image ? "Changer l'image" : "Upload Image"}
+                  {image ? "Changer l'image" : "Ajouter une image"}
                 </span>
                 {errors.image && (
                   <p className="text-red-500 text-sm mt-1">{errors.image}</p>
                 )}
               </label>
+              <span className="text-sm text-gray-500 mt-1">
+                Formats acceptés: JPG, PNG, SVG (max 5MB)
+              </span>
             </div>
 
-            {/* Grille de champs */}
+            {/* Champs du formulaire */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm mb-1">Code article *</label>
@@ -105,8 +181,9 @@ const AddArticle = () => {
                   name="code"
                   value={form.code}
                   onChange={handleChange}
+                  disabled={isSubmitting}
                   className={`w-full border rounded px-4 py-2 ${
-                    errors.code ? "border-red-500" : ""
+                    errors.code ? "border-red-500" : "border-gray-300"
                   }`}
                   placeholder="ART-001"
                 />
@@ -122,8 +199,9 @@ const AddArticle = () => {
                   name="designation"
                   value={form.designation}
                   onChange={handleChange}
+                  disabled={isSubmitting}
                   className={`w-full border rounded px-4 py-2 ${
-                    errors.designation ? "border-red-500" : ""
+                    errors.designation ? "border-red-500" : "border-gray-300"
                   }`}
                   placeholder="Nom de l'article"
                 />
@@ -140,13 +218,17 @@ const AddArticle = () => {
                   name="famille_id"
                   value={form.famille_id}
                   onChange={handleChange}
+                  disabled={isSubmitting}
                   className={`w-full border rounded px-4 py-2 ${
-                    errors.famille_id ? "border-red-500" : ""
+                    errors.famille_id ? "border-red-500" : "border-gray-300"
                   }`}
                 >
                   <option value="">Sélectionner une famille</option>
-                  <option value="1">Électronique</option>
-                  <option value="2">Mécanique</option>
+                  {familles.map((famille) => (
+                    <option key={famille.id} value={famille.id}>
+                      {famille.nom}
+                    </option>
+                  ))}
                 </select>
                 {errors.famille_id && (
                   <p className="text-red-500 text-sm mt-1">
@@ -163,8 +245,9 @@ const AddArticle = () => {
                   value={form.stock}
                   onChange={handleChange}
                   min="0"
+                  disabled={isSubmitting}
                   className={`w-full border rounded px-4 py-2 ${
-                    errors.stock ? "border-red-500" : ""
+                    errors.stock ? "border-red-500" : "border-gray-300"
                   }`}
                 />
                 {errors.stock && (
@@ -173,12 +256,21 @@ const AddArticle = () => {
               </div>
             </div>
 
+            {/* Erreur serveur */}
+            {errors.server && (
+              <div className="mt-6 text-red-500 text-center">
+                {errors.server}
+              </div>
+            )}
+
+            {/* Bouton de soumission */}
             <div className="mt-8 text-center">
               <button
                 type="submit"
-                className="bg-red-500 text-white px-8 py-2 rounded-lg hover:bg-red-600 transition-opacity"
+                disabled={isSubmitting}
+                className="bg-red-500 text-white px-8 py-2 rounded-lg hover:bg-red-600 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Créer l'article
+                {isSubmitting ? "Création en cours..." : "Créer l'article"}
               </button>
             </div>
           </form>
