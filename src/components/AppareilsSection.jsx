@@ -3,8 +3,10 @@ import { SearchBar } from "./SearchBar";
 import { AddButton } from "./AddButton";
 import { ActionButtons } from "./ActionButtons";
 import { SeeAllButton } from "./SeeAllButton";
+import { useNavigate } from "react-router-dom";
 
-export const AppareilsSection = () => {
+export const AppareilsSection = ({ isFullPage = false }) => {
+  const navigate = useNavigate();
   const [appareils] = useState([
     {
       id: 1,
@@ -25,11 +27,12 @@ export const AppareilsSection = () => {
   return (
     <div className="mb-8 p-4 bg-white rounded-lg shadow-sm">
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-bold mb-4">Appareils</h2>
+        <h2 className="text-xl font-bold whitespace-nowrap mb-4">Appareils</h2>
+        <div className="flex-1 max-w-xl">
+          <SearchBar placeholder="Chercher une..." onChange={setSearchQuery} />
+        </div>
         <AddButton label="Ajouter appareil" onClick={() => {}} />
       </div>
-
-      <SearchBar placeholder="Chercher une..." onChange={setSearchQuery} />
 
       <div className="w-full overflow-x-auto">
         <table className="w-full border-collapse">
@@ -77,7 +80,9 @@ export const AppareilsSection = () => {
           </tbody>
         </table>
       </div>
-      <SeeAllButton onClick={() => {}} />
+      {!isFullPage && (
+        <SeeAllButton onClick={() => navigate("/stock/appareils")} />
+      )}
     </div>
   );
 };

@@ -21,6 +21,8 @@ import AddSite from "./pages/AddSite";
 import EditSite from "./pages/EditSite";
 import Stock from "./components/Stock";
 import FamillesPage from "./pages/FamillesPage";
+import ArticlesPage from "./pages/ArticlesPage";
+import AppareilsPage from "./pages/AppareilsPage";
 
 function App() {
   return (
@@ -45,8 +47,8 @@ function App() {
           <Route path="/sites/edit/:id" element={<EditSite />} />
           <Route path="/stock" element={<Stock />} />
           <Route path="/stock/familles" element={<FamillesPage />} />
-          {/* <Route path="/stock/articles" element={<ArticlesPage />} /> */}
-          {/* <Route path="/stock/appareils" element={<AppareilsPage />} /> */}
+          <Route path="/stock/articles" element={<ArticlesPage />} />
+          <Route path="/stock/appareils" element={<AppareilsPage />} />
         </Route>
 
         <Route element={<ProtectedRoute allowedRoles={["technicien"]} />}>
