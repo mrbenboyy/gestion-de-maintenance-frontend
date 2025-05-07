@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { SearchBar } from "./SearchBar";
 import { AddButton } from "./AddButton";
 import { ActionButtons } from "./ActionButtons";
+import { SeeAllButton } from "./SeeAllButton";
 
 export const AppareilsSection = () => {
   const [appareils] = useState([
@@ -76,6 +77,7 @@ export const AppareilsSection = () => {
           </tbody>
         </table>
       </div>
+      <SeeAllButton onClick={() => {}} />
     </div>
   );
 };
