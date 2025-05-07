@@ -19,6 +19,7 @@ import ClientDetails from "./components/ClientDetails";
 import SitesList from "./components/SitesList";
 import AddSite from "./pages/AddSite";
 import EditSite from "./pages/EditSite";
+import Stock from "./components/Stock";
 
 function App() {
   return (
@@ -41,6 +42,7 @@ function App() {
           <Route path="/sites" element={<SitesList />} />
           <Route path="/sites/ajouter" element={<AddSite />} />
           <Route path="/sites/edit/:id" element={<EditSite />} />
+          <Route path="/stock" element={<Stock />} />
         </Route>
 
         <Route element={<ProtectedRoute allowedRoles={["technicien"]} />}>
