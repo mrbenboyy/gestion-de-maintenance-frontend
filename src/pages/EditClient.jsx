@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { FiArrowLeft, FiCamera } from "react-icons/fi";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../utils/api";
-import Sidebar from "../components/SideBar";
 import DashboardHeader from "../components/DashboardHeader";
 
 const EditClient = () => {
@@ -114,7 +113,6 @@ const EditClient = () => {
 
   return (
     <div className="flex">
-      <Sidebar role="admin" />
       <div className="flex-1 bg-gray-100 min-h-screen">
         <DashboardHeader />
 

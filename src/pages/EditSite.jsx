@@ -151,7 +151,6 @@ const EditSite = () => {
 
   return (
     <div className="flex">
-      <Sidebar role="admin" />
       <div className="flex-1 bg-gray-100 min-h-screen">
         <DashboardHeader />
 

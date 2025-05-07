@@ -64,7 +64,7 @@ const NavItem = ({ icon, label, href }) => {
   );
 };
 
-const Sidebar = ({ role = "admin" }) => {
+const Sidebar = ({ role }) => {
   const menuItems = menuByRole[role] || [];
   const navigationItems = menuItems.map((item) => ({
     icon: React.createElement(iconComponents[item.label]),

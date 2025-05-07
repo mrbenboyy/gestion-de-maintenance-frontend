@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Search, Filter } from "lucide-react";
 import ClientCard from "./ClientCard";
-import Sidebar from "./SideBar";
 import DashboardHeader from "./DashboardHeader";
 import { useNavigate } from "react-router-dom";
 import api from "../utils/api";
@@ -62,7 +61,6 @@ const ClientsPage = () => {
 
   return (
     <div className="flex h-screen bg-gray-100">
-      <Sidebar />
 
       <div className="flex-1 flex flex-col overflow-hidden">
         <DashboardHeader />

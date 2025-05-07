@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import Sidebar from "../components/SideBar";
 import DashboardHeader from "../components/DashboardHeader";
 import { FiArrowLeft, FiCamera } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
@@ -58,7 +57,6 @@ const AddUser = () => {
 
   return (
     <div className="flex">
-      <Sidebar role="admin" />
       <div className="flex-1 bg-gray-100 min-h-screen">
         <DashboardHeader />
 

@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { Edit, Trash2 } from "lucide-react";
 import api from "../utils/api";
-import Sidebar from "../components/SideBar";
 import DashboardHeader from "../components/DashboardHeader";
 import ConfirmationModal from "../components/ConfirmationModal";
 
@@ -62,7 +61,6 @@ const ClientDetails = () => {
 
   return (
     <div className="flex">
-      <Sidebar role="admin" />
       <div className="flex-1 bg-gray-100 min-h-screen">
         <DashboardHeader />
 

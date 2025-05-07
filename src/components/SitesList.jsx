@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Edit, Trash2, Filter, ArrowLeft, ArrowRight } from "lucide-react";
 import DashboardHeader from "../components/DashboardHeader";
-import Sidebar from "../components/SideBar";
 import { useNavigate } from "react-router-dom";
 import api from "../utils/api";
 import ConfirmationModal from "./ConfirmationModal";
@@ -37,7 +36,6 @@ const SitesList = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
-      <Sidebar />
 
       <div className="flex-1 flex flex-col">
         <DashboardHeader />

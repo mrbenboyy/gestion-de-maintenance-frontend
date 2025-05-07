@@ -30,6 +30,7 @@ import EditFamille from "./pages/EditFamille";
 import EditArticle from "./pages/EditArticle";
 import EditAppareil from "./pages/EditAppareil";
 import Layout from "./components/Layout";
+import PlanifierIntervention from "./components/PlannifierIntervention";
 
 function App() {
   return (
@@ -230,6 +231,14 @@ function App() {
             element={
               <Layout>
                 <ResponsableDashboard />
+              </Layout>
+            }
+          />
+          <Route
+            path="/planifier-intervention"
+            element={
+              <Layout>
+                <PlanifierIntervention />
               </Layout>
             }
           />

@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import Sidebar from "../components/SideBar";
 import DashboardHeader from "../components/DashboardHeader";
 import UserCard from "../components/UserCard";
 import ConfirmationModal from "../components/ConfirmationModal";
@@ -46,7 +45,6 @@ const Users = () => {
 
   return (
     <div className="flex">
-      <Sidebar role="admin" />
       <div className="flex-1 bg-gray-100 min-h-screen">
         <DashboardHeader />
 
