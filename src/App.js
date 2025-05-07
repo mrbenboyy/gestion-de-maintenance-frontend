@@ -23,7 +23,7 @@ import Stock from "./components/Stock";
 
 function App() {
   return (
-    <div className="App">
+    <div className="App ml-64">
       <Routes>
         {/* Routes publiques */}
         <Route path="/login" element={<Login />} />
