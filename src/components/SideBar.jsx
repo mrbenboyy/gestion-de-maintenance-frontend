@@ -9,6 +9,14 @@ import {
   Settings,
   LogOut,
   Wrench,
+  CalendarPlus,
+  ClipboardList,
+  PackageCheck,
+  Calendar,
+  Package,
+  ClipboardCheck,
+  Bell,
+  MapPinCheck,
 } from "lucide-react";
 import Logo from "../images/logo.png";
 import { menuByRole } from "../constants/sidebarMenu";
@@ -20,6 +28,16 @@ const iconComponents = {
   Sites: Map,
   "Stocks & Matériel": BarChart3,
   Interventions: Wrench,
+  Dashboard: LayoutDashboard,
+  "Planifier intervention": CalendarPlus,
+  "Suivi des interventions": ClipboardList,
+  "Suivi des commandes": PackageCheck,
+  "Mon planning": Calendar,
+  "Demandes de matériel": Package,
+  "Fiche de vérification": ClipboardCheck,
+  Notifications: Bell,
+  "Suivi des visites": MapPinCheck,
+  Techniciens: Users,
 };
 
 const NavItem = ({ icon, label, href }) => {
