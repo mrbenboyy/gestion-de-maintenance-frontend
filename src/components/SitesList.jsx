@@ -5,10 +5,13 @@ import DashboardHeader from "../components/DashboardHeader";
 import Sidebar from "../components/SideBar";
 import { useNavigate } from "react-router-dom";
 import api from "../utils/api";
+import ConfirmationModal from "./ConfirmationModal";
 
 const SitesList = () => {
   const navigate = useNavigate();
   const [sites, setSites] = useState([]);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [selectedSiteId, setSelectedSiteId] = useState(null);
 
   useEffect(() => {
     const fetchSites = async () => {
@@ -22,12 +25,29 @@ const SitesList = () => {
     fetchSites();
   }, []);
 
+  const handleDeleteSite = async () => {
+    try {
+      await api.delete(`/sites/${selectedSiteId}`);
+      setSites(sites.filter((site) => site.id !== selectedSiteId));
+      setShowDeleteModal(false);
+    } catch (err) {
+      console.error("Erreur lors de la suppression:", err);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 flex">
       <Sidebar />
 
       <div className="flex-1 flex flex-col">
         <DashboardHeader />
+        <ConfirmationModal
+          isOpen={showDeleteModal}
+          onClose={() => setShowDeleteModal(false)}
+          onConfirm={handleDeleteSite}
+          title="Confirmer la suppression"
+          message="Êtes-vous sûr de vouloir supprimer ce site ? Cette action est irréversible."
+        />
 
         <main className="flex-1 p-6 max-w-7xl mx-auto w-full">
           <div className="bg-white rounded-lg shadow p-6">
@@ -104,7 +124,14 @@ const SitesList = () => {
                           <button className="p-2 rounded-md border hover:bg-gray-100">
                             <Edit size={16} />
                           </button>
-                          <button className="p-2 rounded-md border hover:bg-gray-100 text-red-500">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedSiteId(site.id);
+                              setShowDeleteModal(true);
+                            }}
+                            className="p-2 rounded-md border hover:bg-gray-100 text-red-500"
+                          >
                             <Trash2 size={16} />
                           </button>
                         </div>
