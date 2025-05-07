@@ -28,6 +28,7 @@ import AddArticle from "./pages/AddArticle";
 import AddAppareil from "./pages/AddAppareil";
 import EditFamille from "./pages/EditFamille";
 import EditArticle from "./pages/EditArticle";
+import EditAppareil from "./pages/EditAppareil";
 
 function App() {
   return (
@@ -64,6 +65,10 @@ function App() {
           <Route
             path="/stock/articles/:code/modifier"
             element={<EditArticle />}
+          />
+          <Route
+            path="/stock/appareils/:id/modifier"
+            element={<EditAppareil />}
           />
         </Route>
 
