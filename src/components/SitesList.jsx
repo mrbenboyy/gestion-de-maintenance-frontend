@@ -1,22 +1,26 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Edit, Trash2, Filter, ArrowLeft, ArrowRight } from "lucide-react";
 import DashboardHeader from "../components/DashboardHeader";
 import Sidebar from "../components/SideBar";
 import { useNavigate } from "react-router-dom";
+import api from "../utils/api";
 
 const SitesList = () => {
   const navigate = useNavigate();
-  const [sites] = useState([
-    {
-      id: 1,
-      name: "Station Casa",
-      client: "Total Energies",
-      type: "Agence",
-      annualVisits: 2,
-      imageUrl: "/lovable-uploads/dbb8833c-1ca0-4730-82e4-89cb1f8642a3.png",
-    },
-  ]);
+  const [sites, setSites] = useState([]);
+
+  useEffect(() => {
+    const fetchSites = async () => {
+      try {
+        const response = await api.get("/sites");
+        setSites(response.data);
+      } catch (err) {
+        console.error("Erreur récupération sites:", err);
+      }
+    };
+    fetchSites();
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
@@ -78,17 +82,23 @@ const SitesList = () => {
                     <tr key={site.id} className="border-t border-gray-200">
                       <td className="py-4">
                         <div className="w-12 h-12 overflow-hidden">
-                          <img
-                            src={site.imageUrl}
-                            alt={site.name}
-                            className="w-full h-full object-contain"
-                          />
+                          {site.client_image ? (
+                            <img
+                              src={`${process.env.REACT_APP_API_URL}${site.client_image}`}
+                              alt={site.client_nom}
+                              className="w-full h-full object-contain"
+                            />
+                          ) : (
+                            <div className="w-full h-full bg-gray-100 flex items-center justify-center text-xs text-gray-400">
+                              Aucune image
+                            </div>
+                          )}
                         </div>
                       </td>
-                      <td>{site.name}</td>
-                      <td>{site.client}</td>
-                      <td>{site.type}</td>
-                      <td>{site.annualVisits}</td>
+                      <td>{site.nom}</td>
+                      <td>{site.client_nom}</td>
+                      <td>{site.type_site}</td>
+                      <td>{site.nombre_visites_annuelles}</td>
                       <td className="text-right">
                         <div className="flex justify-end gap-2">
                           <button className="p-2 rounded-md border hover:bg-gray-100">
