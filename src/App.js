@@ -18,6 +18,7 @@ import EditClient from "./pages/EditClient";
 import ClientDetails from "./components/ClientDetails";
 import SitesList from "./components/SitesList";
 import AddSite from "./pages/AddSite";
+import EditSite from "./pages/EditSite";
 
 function App() {
   return (
@@ -39,6 +40,7 @@ function App() {
           <Route path="/clients/:id" element={<ClientDetails />} />
           <Route path="/sites" element={<SitesList />} />
           <Route path="/sites/ajouter" element={<AddSite />} />
+          <Route path="/sites/edit/:id" element={<EditSite />} />
         </Route>
 
         <Route element={<ProtectedRoute allowedRoles={["technicien"]} />}>

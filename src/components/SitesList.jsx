@@ -121,9 +121,12 @@ const SitesList = () => {
                       <td>{site.nombre_visites_annuelles}</td>
                       <td className="text-right">
                         <div className="flex justify-end gap-2">
-                          <button className="p-2 rounded-md border hover:bg-gray-100">
+                          <Link
+                            to={`/sites/edit/${site.id}`}
+                            className="p-2 rounded-md border hover:bg-gray-100 no-underline text-black"
+                          >
                             <Edit size={16} />
-                          </button>
+                          </Link>
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
