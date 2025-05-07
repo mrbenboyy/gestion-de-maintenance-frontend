@@ -1,8 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Sidebar from "../components/SideBar";
 import DashboardHeader from "../components/DashboardHeader";
 import { FiArrowLeft, FiCamera } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
+import api from "../utils/api";
 
 const AddAppareil = () => {
   const navigate = useNavigate();
@@ -12,10 +13,30 @@ const AddAppareil = () => {
   });
   const [image, setImage] = useState(null);
   const [errors, setErrors] = useState({});
+  const [familles, setFamilles] = useState([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Charger les familles
+  useEffect(() => {
+    const loadFamilles = async () => {
+      try {
+        const response = await api.get("/familles");
+        setFamilles(response.data);
+      } catch (err) {
+        console.error("Erreur chargement familles:", err);
+        setErrors((prev) => ({
+          ...prev,
+          server: "Erreur de chargement des familles",
+        }));
+      }
+    };
+    loadFamilles();
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
+    setErrors((prev) => ({ ...prev, [name]: null }));
   };
 
   const handleImageUpload = (e) => {
@@ -23,7 +44,12 @@ const AddAppareil = () => {
     if (!file) return;
 
     if (!file.type.startsWith("image/")) {
-      setErrors((prev) => ({ ...prev, image: "Format d'image non supporté" }));
+      setErrors((prev) => ({ ...prev, image: "Format image non supporté" }));
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setErrors((prev) => ({ ...prev, image: "Taille maximale 5MB" }));
       return;
     }
 
@@ -31,17 +57,49 @@ const AddAppareil = () => {
     setErrors((prev) => ({ ...prev, image: null }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsSubmitting(true);
     const newErrors = {};
 
     if (!form.nom.trim()) newErrors.nom = "Nom obligatoire";
     if (!form.famille_id) newErrors.famille_id = "Famille obligatoire";
 
-    if (Object.keys(newErrors).length > 0) return setErrors(newErrors);
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      setIsSubmitting(false);
+      return;
+    }
 
-    // Navigation simulée
-    navigate("/stock/appareils");
+    try {
+      const formData = new FormData();
+      formData.append("nom", form.nom);
+      formData.append("famille_id", form.famille_id);
+      if (image) formData.append("image", image);
+
+      const response = await api.post("/appareils", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      if (response.data) {
+        navigate("/stock/appareils");
+      }
+    } catch (err) {
+      let errorMessage = "Erreur lors de la création";
+
+      if (err.response?.data?.errors) {
+        setErrors(err.response.data.errors);
+      } else if (err.response?.data?.error) {
+        errorMessage = err.response.data.error;
+        setErrors((prev) => ({ ...prev, server: errorMessage }));
+      }
+
+      if (image) URL.revokeObjectURL(image);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -70,6 +128,7 @@ const AddAppareil = () => {
                   accept="image/*"
                   onChange={handleImageUpload}
                   className="hidden"
+                  disabled={isSubmitting}
                 />
                 <div className="w-24 h-24 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 text-3xl">
                   {image ? (
@@ -89,6 +148,9 @@ const AddAppareil = () => {
                   <p className="text-red-500 text-sm mt-1">{errors.image}</p>
                 )}
               </label>
+              <span className="text-sm text-gray-500 mt-1">
+                Formats acceptés: JPG, PNG, SVG (max 5MB)
+              </span>
             </div>
 
             {/* Champs du formulaire */}
@@ -102,6 +164,7 @@ const AddAppareil = () => {
                   name="nom"
                   value={form.nom}
                   onChange={handleChange}
+                  disabled={isSubmitting}
                   className={`w-full border rounded px-4 py-2 ${
                     errors.nom ? "border-red-500" : ""
                   }`}
@@ -118,28 +181,45 @@ const AddAppareil = () => {
                   name="famille_id"
                   value={form.famille_id}
                   onChange={handleChange}
+                  disabled={isSubmitting || familles.length === 0}
                   className={`w-full border rounded px-4 py-2 ${
                     errors.famille_id ? "border-red-500" : ""
                   }`}
                 >
                   <option value="">Sélectionner une famille</option>
-                  <option value="1">Électronique</option>
-                  <option value="2">Mécanique</option>
+                  {familles.map((famille) => (
+                    <option key={famille.id} value={famille.id}>
+                      {famille.nom}
+                    </option>
+                  ))}
                 </select>
                 {errors.famille_id && (
                   <p className="text-red-500 text-sm mt-1">
                     {errors.famille_id}
                   </p>
                 )}
+                {familles.length === 0 && (
+                  <p className="text-red-500 text-sm mt-1">
+                    Aucune famille disponible - Créez d'abord une famille
+                  </p>
+                )}
               </div>
             </div>
+
+            {/* Erreurs serveur */}
+            {errors.server && (
+              <div className="mt-4 text-red-500 text-center">
+                {errors.server}
+              </div>
+            )}
 
             <div className="mt-8 text-center">
               <button
                 type="submit"
-                className="bg-red-500 text-white px-8 py-2 rounded-lg hover:bg-red-600 transition-opacity"
+                disabled={isSubmitting || familles.length === 0}
+                className="bg-red-500 text-white px-8 py-2 rounded-lg hover:bg-red-600 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Enregistrer l'appareil
+                {isSubmitting ? "Enregistrement..." : "Enregistrer l'appareil"}
               </button>
             </div>
           </form>
