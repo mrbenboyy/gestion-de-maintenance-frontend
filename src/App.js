@@ -23,6 +23,7 @@ import Stock from "./components/Stock";
 import FamillesPage from "./pages/FamillesPage";
 import ArticlesPage from "./pages/ArticlesPage";
 import AppareilsPage from "./pages/AppareilsPage";
+import AddFamille from "./pages/AddFamille";
 
 function App() {
   return (
@@ -49,6 +50,7 @@ function App() {
           <Route path="/stock/familles" element={<FamillesPage />} />
           <Route path="/stock/articles" element={<ArticlesPage />} />
           <Route path="/stock/appareils" element={<AppareilsPage />} />
+          <Route path="/stock/familles/ajouter" element={<AddFamille />} />
         </Route>
 
         <Route element={<ProtectedRoute allowedRoles={["technicien"]} />}>

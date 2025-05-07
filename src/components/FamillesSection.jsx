@@ -38,7 +38,10 @@ export const FamillesSection = ({ isFullPage = false }) => {
         <div className="flex-1 max-w-xl">
           <SearchBar placeholder="Chercher une..." onChange={setSearchQuery} />
         </div>
-        <AddButton label="Ajouter famille" onClick={() => {}} />
+        <AddButton
+          label="Ajouter famille"
+          onClick={() => navigate("/stock/familles/ajouter")}
+        />
       </div>
 
       <div className="w-full overflow-x-auto">
