@@ -3,16 +3,19 @@ import Sidebar from "../components/SideBar";
 import DashboardHeader from "../components/DashboardHeader";
 import { FiArrowLeft, FiCamera } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
+import api from "../utils/api";
 
 const AddFamille = () => {
   const navigate = useNavigate();
   const [form, setForm] = useState({ nom: "" });
   const [image, setImage] = useState(null);
   const [errors, setErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
+    setErrors((prev) => ({ ...prev, [name]: null }));
   };
 
   const handleImageUpload = (e) => {
@@ -24,19 +27,59 @@ const AddFamille = () => {
       return;
     }
 
+    if (file.size > 5 * 1024 * 1024) {
+      setErrors((prev) => ({ ...prev, image: "La taille maximale est 5MB" }));
+      return;
+    }
+
     setImage(file);
     setErrors((prev) => ({ ...prev, image: null }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Validation simplifiée (statique)
+    setIsSubmitting(true);
+    setErrors({});
+
     if (!form.nom.trim()) {
       setErrors({ nom: "Le nom de la famille est obligatoire" });
+      setIsSubmitting(false);
       return;
     }
-    // Navigation simulée
-    navigate("/stock/familles");
+
+    try {
+      const formData = new FormData();
+      formData.append("nom", form.nom);
+      if (image) formData.append("image", image);
+
+      const response = await api.post("/familles", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      if (response.data) {
+        navigate("/stock/familles");
+      }
+    } catch (err) {
+      let errorMessage = "Erreur lors de la création";
+
+      if (err.response) {
+        // Gestion des erreurs spécifiques du backend
+        if (err.response.data.error.includes("existe déjà")) {
+          errorMessage = "Cette famille existe déjà";
+        } else {
+          errorMessage = err.response.data.error;
+        }
+      }
+
+      // Nettoyer la prévisualisation d'image
+      if (image) URL.revokeObjectURL(image);
+
+      setErrors({ server: errorMessage });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -50,7 +93,7 @@ const AddFamille = () => {
             onClick={() => navigate(-1)}
             className="flex items-center text-gray-600 mb-6 hover:underline"
           >
-            <FiArrowLeft className="mr-2" /> Ajouter nouvelle famille
+            <FiArrowLeft className="mr-2" /> Retour à la liste
           </button>
 
           <form
@@ -65,6 +108,7 @@ const AddFamille = () => {
                   accept="image/*"
                   onChange={handleImageUpload}
                   className="hidden"
+                  disabled={isSubmitting}
                 />
                 <div className="w-24 h-24 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 text-3xl">
                   {image ? (
@@ -78,7 +122,7 @@ const AddFamille = () => {
                   )}
                 </div>
                 <span className="text-sm text-blue-600 mt-2 hover:underline">
-                  {image ? "Changer l'image" : "Upload Image"}
+                  {image ? "Changer l'image" : "Ajouter une image"}
                 </span>
                 {errors.image && (
                   <p className="text-red-500 text-sm mt-1">{errors.image}</p>
@@ -100,8 +144,9 @@ const AddFamille = () => {
                   name="nom"
                   value={form.nom}
                   onChange={handleChange}
+                  disabled={isSubmitting}
                   className={`w-full border rounded px-4 py-2 ${
-                    errors.nom ? "border-red-500" : ""
+                    errors.nom ? "border-red-500" : "border-gray-300"
                   }`}
                   placeholder="Ex: Électronique"
                 />
@@ -111,13 +156,21 @@ const AddFamille = () => {
               </div>
             </div>
 
+            {/* Erreur serveur */}
+            {errors.server && (
+              <div className="mb-4 text-red-500 text-center">
+                {errors.server}
+              </div>
+            )}
+
             {/* Bouton de soumission */}
             <div className="mt-8 text-center">
               <button
                 type="submit"
-                className="bg-red-500 text-white px-8 py-2 rounded-lg hover:bg-red-600 transition-opacity"
+                disabled={isSubmitting}
+                className="bg-red-500 text-white px-8 py-2 rounded-lg hover:bg-red-600 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Créer la Famille
+                {isSubmitting ? "En cours..." : "Créer la famille"}
               </button>
             </div>
           </form>

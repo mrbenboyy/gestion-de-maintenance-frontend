@@ -1,42 +1,67 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { SearchBar } from "./SearchBar";
 import { AddButton } from "./AddButton";
 import { ActionButtons } from "./ActionButtons";
 import { SeeAllButton } from "./SeeAllButton";
 import { useNavigate } from "react-router-dom";
+import api from "../utils/api";
 
 export const FamillesSection = ({ isFullPage = false }) => {
   const navigate = useNavigate();
-  const [familles] = useState([
-    {
-      id: 1,
-      image: "/placeholder.png",
-      name: "XXXXX",
-      numberOfArticles: 15,
-      numberOfDevices: 62,
-    },
-    {
-      id: 2,
-      image: "/placeholder.png",
-      name: "XXXXX",
-      numberOfArticles: 15,
-      numberOfDevices: 11,
-    },
-  ]);
+  const [familles, setFamilles] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchFamilles = async () => {
+      try {
+        const response = await api.get("/familles");
+        setFamilles(response.data);
+      } catch (err) {
+        setError(
+          err.response?.data?.error || "Erreur de chargement des familles"
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchFamilles();
+  }, []);
 
   const filteredFamilles = familles.filter((famille) =>
-    famille.name.toLowerCase().includes(searchQuery.toLowerCase())
+    famille.nom.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  if (loading) {
+    return (
+      <div className="p-4 bg-white rounded-lg shadow-sm text-center py-8">
+        Chargement en cours...
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-4 bg-white rounded-lg shadow-sm text-center text-red-500 py-8">
+        {error}
+      </div>
+    );
+  }
 
   return (
     <div
       className={`p-4 bg-white rounded-lg shadow-sm ${!isFullPage && "mb-8"}`}
     >
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-bold whitespace-nowrap mb-4">Familles</h2>
-        <div className="flex-1 max-w-xl">
-          <SearchBar placeholder="Chercher une..." onChange={setSearchQuery} />
+      <div className="flex justify-between items-center mb-4 flex-wrap gap-4">
+        <h2 className="text-xl font-bold whitespace-nowrap">Familles</h2>
+        <div className="flex-1 max-w-xl min-w-[300px]">
+          <SearchBar
+            placeholder="Rechercher une famille..."
+            onChange={setSearchQuery}
+            value={searchQuery}
+          />
         </div>
         <AddButton
           label="Ajouter famille"
@@ -55,10 +80,10 @@ export const FamillesSection = ({ isFullPage = false }) => {
                 Nom
               </th>
               <th className="text-left px-4 py-2 text-sm font-medium text-gray-600">
-                Articles associés
+                Articles
               </th>
               <th className="text-left px-4 py-2 text-sm font-medium text-gray-600">
-                Appareils associés
+                Appareils
               </th>
               <th className="text-left px-4 py-2 text-sm font-medium text-gray-600">
                 Actions
@@ -67,31 +92,74 @@ export const FamillesSection = ({ isFullPage = false }) => {
           </thead>
           <tbody>
             {filteredFamilles.map((famille) => (
-              <tr key={famille.id}>
+              <tr
+                key={famille.id}
+                className="hover:bg-gray-50 transition-colors"
+              >
                 <td className="px-4 py-3 border-t border-gray-200">
-                  <div className="w-12 h-12 rounded-md bg-gray-200 flex items-center justify-center">
-                    <img src={famille.image} alt="" className="w-8 h-8" />
+                  <div className="w-12 h-12 rounded-md bg-gray-100 flex items-center justify-center overflow-hidden">
+                    {famille.image ? (
+                      <img
+                        src={`${process.env.REACT_APP_API_URL}${famille.image}`}
+                        alt={famille.nom}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-gray-400 text-sm">
+                        Aucune image
+                      </span>
+                    )}
                   </div>
                 </td>
-                <td className="px-4 py-3 border-t border-gray-200">
-                  {famille.name}
+                <td className="px-4 py-3 border-t border-gray-200 font-medium">
+                  {famille.nom}
                 </td>
                 <td className="px-4 py-3 border-t border-gray-200">
-                  {famille.numberOfArticles}
+                  {famille.articles_count || 0}
                 </td>
                 <td className="px-4 py-3 border-t border-gray-200">
-                  {famille.numberOfDevices}
+                  {famille.appareils_count || 0}
                 </td>
                 <td className="px-4 py-3 border-t border-gray-200">
-                  <ActionButtons onEdit={() => {}} onDelete={() => {}} />
+                  <ActionButtons
+                    onEdit={() =>
+                      navigate(`/stock/familles/${famille.id}/modifier`)
+                    }
+                    onDelete={async () => {
+                      if (window.confirm("Confirmer la suppression ?")) {
+                        try {
+                          await api.delete(`/familles/${famille.id}`);
+                          setFamilles((prev) =>
+                            prev.filter((f) => f.id !== famille.id)
+                          );
+                        } catch (err) {
+                          alert(
+                            err.response?.data?.error ||
+                              "Erreur lors de la suppression"
+                          );
+                        }
+                      }
+                    }}
+                  />
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
+
+        {filteredFamilles.length === 0 && !loading && (
+          <div className="text-center py-6 text-gray-500">
+            {searchQuery
+              ? "Aucun résultat trouvé"
+              : "Aucune famille enregistrée"}
+          </div>
+        )}
       </div>
+
       {!isFullPage && (
-        <SeeAllButton onClick={() => navigate("/stock/familles")} />
+        <div className="mt-6 flex justify-end">
+          <SeeAllButton onClick={() => navigate("/stock/familles")} />
+        </div>
       )}
     </div>
   );
