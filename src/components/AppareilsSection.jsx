@@ -31,7 +31,10 @@ export const AppareilsSection = ({ isFullPage = false }) => {
         <div className="flex-1 max-w-xl">
           <SearchBar placeholder="Chercher une..." onChange={setSearchQuery} />
         </div>
-        <AddButton label="Ajouter appareil" onClick={() => {}} />
+        <AddButton
+          label="Ajouter appareil"
+          onClick={() => navigate("/stock/appareils/ajouter")}
+        />
       </div>
 
       <div className="w-full overflow-x-auto">
