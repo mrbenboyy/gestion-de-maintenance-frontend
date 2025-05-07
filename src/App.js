@@ -27,6 +27,7 @@ import AddFamille from "./pages/AddFamille";
 import AddArticle from "./pages/AddArticle";
 import AddAppareil from "./pages/AddAppareil";
 import EditFamille from "./pages/EditFamille";
+import EditArticle from "./pages/EditArticle";
 
 function App() {
   return (
@@ -59,6 +60,10 @@ function App() {
           <Route
             path="/stock/familles/:id/modifier"
             element={<EditFamille />}
+          />
+          <Route
+            path="/stock/articles/:code/modifier"
+            element={<EditArticle />}
           />
         </Route>
 
