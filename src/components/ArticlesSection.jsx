@@ -39,7 +39,10 @@ export const ArticlesSection = ({ isFullPage = false }) => {
         <div className="flex-1 max-w-xl">
           <SearchBar placeholder="Chercher une..." onChange={setSearchQuery} />
         </div>
-        <AddButton label="Ajouter article" onClick={() => {}} />
+        <AddButton
+          label="Ajouter article"
+          onClick={() => navigate("/stock/articles/ajouter")}
+        />
       </div>
 
       <div className="w-full overflow-x-auto">
