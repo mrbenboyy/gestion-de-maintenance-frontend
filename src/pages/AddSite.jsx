@@ -3,9 +3,16 @@ import Sidebar from "../components/SideBar";
 import DashboardHeader from "../components/DashboardHeader";
 import { FiArrowLeft } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
-import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
+import {
+  MapContainer,
+  TileLayer,
+  Marker,
+  useMapEvents,
+  useMap,
+} from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
+import api from "../utils/api";
 
 // Fix pour les marqueurs
 delete L.Icon.Default.prototype._getIconUrl;
@@ -19,20 +26,33 @@ const AddSite = () => {
   const navigate = useNavigate();
   const [form, setForm] = useState({
     nom: "",
-    client: "",
-    type: "Agence",
+    client_id: "",
+    type_site: "Agence",
     adresse: "",
-    visites_annuelles: 1,
+    nombre_visites_annuelles: 1,
+    region: "",
     lat: "",
     lng: "",
   });
 
-  const [mapCenter] = useState([33.5731, -7.5898]); // Coordonnées de Casablanca
+  const [mapCenter] = useState([33.5731, -7.5898]);
   const [markerPosition, setMarkerPosition] = useState(null);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
+  const [clients, setClients] = useState([]);
 
-  const clients = ["Total Energies", "Shell", "BP", "Chevron"];
+  // Récupérer la liste des clients
+  useEffect(() => {
+    const fetchClients = async () => {
+      try {
+        const response = await api.get("/clients");
+        setClients(response.data);
+      } catch (err) {
+        console.error("Erreur lors de la récupération des clients:", err);
+      }
+    };
+    fetchClients();
+  }, []);
 
   const MapClickHandler = () => {
     useMapEvents({
@@ -51,24 +71,72 @@ const AddSite = () => {
   const validateForm = () => {
     const newErrors = {};
     if (!form.nom.trim()) newErrors.nom = "Champ obligatoire";
-    if (!form.client) newErrors.client = "Champ obligatoire";
+    if (!form.client_id) newErrors.client_id = "Champ obligatoire";
     if (!form.adresse.trim()) newErrors.adresse = "Champ obligatoire";
-    if (![1, 2].includes(Number(form.visites_annuelles))) {
-      newErrors.visites_annuelles = "Doit être 1 ou 2";
+    if (!form.region.trim()) newErrors.region = "Champ obligatoire";
+    if (!form.lat || !form.lng) newErrors.localisation = "Position requise";
+    if (![1, 2].includes(Number(form.nombre_visites_annuelles))) {
+      newErrors.nombre_visites_annuelles = "Doit être 1 ou 2";
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (validateForm()) {
-      setLoading(true);
-      setTimeout(() => {
-        navigate("/sites");
-        setLoading(false);
-      }, 1000);
+    if (!validateForm()) return;
+
+    setLoading(true);
+
+    try {
+      // Conversion des types numériques
+      const payload = {
+        ...form,
+        lat: parseFloat(form.lat),
+        lng: parseFloat(form.lng),
+        nombre_visites_annuelles: parseInt(form.nombre_visites_annuelles),
+      };
+
+      await api.post("/sites", payload);
+      navigate("/sites");
+    } catch (err) {
+      console.error("Erreur détaillée:", err.response?.data);
+      const backendErrors = err.response?.data?.errors || [];
+      const errorMap = {};
+      backendErrors.forEach((error) => {
+        const field = error.path;
+        errorMap[field] = error.msg;
+      });
+
+      // Ajouter l'erreur générale du serveur
+      if (err.response?.data?.error) {
+        errorMap.api = err.response.data.error;
+      }
+
+      setErrors(errorMap);
+    } finally {
+      setLoading(false);
     }
+  };
+
+  useEffect(() => {
+    if (form.lat && form.lng) {
+      const lat = parseFloat(form.lat);
+      const lng = parseFloat(form.lng);
+      if (!isNaN(lat) && !isNaN(lng)) {
+        setMarkerPosition([lat, lng]);
+      }
+    } else {
+      setMarkerPosition(null);
+    }
+  }, [form.lat, form.lng]);
+
+  const MapUpdater = ({ center, zoom }) => {
+    const map = useMap();
+    useEffect(() => {
+      map.setView(center, zoom);
+    }, [center, zoom, map]);
+    return null;
   };
 
   return (
@@ -112,22 +180,26 @@ const AddSite = () => {
               <div>
                 <label className="block text-sm mb-1">Client associé *</label>
                 <select
-                  name="client"
-                  value={form.client}
-                  onChange={(e) => setForm({ ...form, client: e.target.value })}
+                  name="client_id"
+                  value={form.client_id}
+                  onChange={(e) =>
+                    setForm({ ...form, client_id: e.target.value })
+                  }
                   className={`w-full border rounded px-4 py-2 ${
-                    errors.client ? "border-red-500" : ""
+                    errors.client_id ? "border-red-500" : ""
                   }`}
                 >
                   <option value="">Sélectionner un client</option>
-                  {clients.map((client, index) => (
-                    <option key={index} value={client}>
-                      {client}
+                  {clients.map((client) => (
+                    <option key={client.id} value={client.id}>
+                      {client.nom}
                     </option>
                   ))}
                 </select>
-                {errors.client && (
-                  <p className="text-red-500 text-sm mt-1">{errors.client}</p>
+                {errors.client_id && (
+                  <p className="text-red-500 text-sm mt-1">
+                    {errors.client_id}
+                  </p>
                 )}
               </div>
 
@@ -135,9 +207,11 @@ const AddSite = () => {
               <div>
                 <label className="block text-sm mb-1">Type de site *</label>
                 <select
-                  name="type"
-                  value={form.type}
-                  onChange={(e) => setForm({ ...form, type: e.target.value })}
+                  name="type_site"
+                  value={form.type_site}
+                  onChange={(e) =>
+                    setForm({ ...form, type_site: e.target.value })
+                  }
                   className="w-full border rounded px-4 py-2"
                 >
                   <option value="Agence">Agence</option>
@@ -168,61 +242,109 @@ const AddSite = () => {
 
               {/* Visites annuelles et Coordonnées */}
               <div className="md:col-span-2">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Visites annuelles */}
                   <div>
                     <label className="block text-sm mb-1">
                       Visites annuelles *
                     </label>
                     <select
-                      name="visites_annuelles"
-                      value={form.visites_annuelles}
+                      name="nombre_visites_annuelles"
+                      value={form.nombre_visites_annuelles}
                       onChange={(e) =>
-                        setForm({ ...form, visites_annuelles: e.target.value })
+                        setForm({
+                          ...form,
+                          nombre_visites_annuelles: e.target.value,
+                        })
                       }
                       className={`w-full border rounded px-3 py-2 text-sm ${
-                        errors.visites_annuelles ? "border-red-500" : ""
+                        errors.nombre_visites_annuelles ? "border-red-500" : ""
                       }`}
                     >
                       <option value={1}>1</option>
                       <option value={2}>2</option>
                     </select>
+                    {errors.nombre_visites_annuelles && (
+                      <p className="text-red-500 text-sm mt-1">
+                        {errors.nombre_visites_annuelles}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Région */}
+                  <div>
+                    <label className="block text-sm mb-1">Région *</label>
+                    <input
+                      type="text"
+                      name="region"
+                      value={form.region}
+                      onChange={(e) =>
+                        setForm({ ...form, region: e.target.value })
+                      }
+                      placeholder="Ex: Casablanca-Settat"
+                      className={`w-full border rounded px-3 py-2 text-sm ${
+                        errors.region ? "border-red-500" : ""
+                      }`}
+                    />
+                    {errors.region && (
+                      <p className="text-red-500 text-sm mt-1">
+                        {errors.region}
+                      </p>
+                    )}
                   </div>
 
                   {/* Latitude */}
                   <div>
-                    <label className="block text-sm mb-1">Latitude</label>
+                    <label className="block text-sm mb-1">Latitude *</label>
                     <input
                       type="number"
                       step="any"
                       value={form.lat}
-                      onChange={(e) =>
-                        setForm({ ...form, lat: e.target.value })
-                      }
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        if (/^-?\d*\.?\d*$/.test(value)) {
+                          const normalizedValue = value.replace(/,/g, ".");
+                          setForm({ ...form, lat: normalizedValue });
+                        }
+                      }}
                       placeholder="33.5731"
-                      className="w-full border rounded px-3 py-2 text-sm"
+                      className={`w-full border rounded px-3 py-2 text-sm ${
+                        errors.lat ? "border-red-500" : ""
+                      }`}
                     />
                   </div>
 
                   {/* Longitude */}
                   <div>
-                    <label className="block text-sm mb-1">Longitude</label>
+                    <label className="block text-sm mb-1">Longitude *</label>
                     <input
                       type="number"
                       step="any"
                       value={form.lng}
-                      onChange={(e) =>
-                        setForm({ ...form, lng: e.target.value })
-                      }
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        if (/^-?\d*\.?\d*$/.test(value)) {
+                          const normalizedValue = value.replace(/,/g, ".");
+                          setForm({ ...form, lng: normalizedValue });
+                        }
+                      }}
                       placeholder="-7.5898"
-                      className="w-full border rounded px-3 py-2 text-sm"
+                      className={`w-full border rounded px-3 py-2 text-sm ${
+                        errors.lng ? "border-red-500" : ""
+                      }`}
                     />
                   </div>
                 </div>
+                {errors.localisation && (
+                  <p className="text-red-500 text-sm mt-2">
+                    {errors.localisation}
+                  </p>
+                )}
 
                 <div className="md:col-span-2">
                   <div className="h-64 rounded-lg overflow-hidden mt-4">
                     <MapContainer
+                      key={`${form.lat}-${form.lng}`}
                       center={mapCenter}
                       zoom={13}
                       className="h-full w-full"
@@ -232,9 +354,11 @@ const AddSite = () => {
                         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                       />
                       <MapClickHandler />
-                      {markerPosition && (
-                        <Marker position={[form.lat, form.lng]} />
-                      )}
+                      {markerPosition && <Marker position={markerPosition} />}
+                      <MapUpdater
+                        center={markerPosition || mapCenter}
+                        zoom={13}
+                      />
                     </MapContainer>
                   </div>
                   <p className="text-sm text-gray-500 mt-2">
@@ -242,7 +366,6 @@ const AddSite = () => {
                   </p>
                 </div>
               </div>
-              <div />
             </div>
 
             <div className="mt-8 text-center">
