@@ -5,6 +5,7 @@ import { ActionButtons } from "./ActionButtons";
 import { SeeAllButton } from "./SeeAllButton";
 import { useNavigate } from "react-router-dom";
 import api from "../utils/api";
+import ConfirmationModal from "./ConfirmationModal";
 
 export const FamillesSection = ({ isFullPage = false }) => {
   const navigate = useNavigate();
@@ -12,6 +13,8 @@ export const FamillesSection = ({ isFullPage = false }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [selectedFamille, setSelectedFamille] = useState(null);
 
   useEffect(() => {
     const fetchFamilles = async () => {
@@ -49,6 +52,17 @@ export const FamillesSection = ({ isFullPage = false }) => {
       </div>
     );
   }
+
+  const handleDelete = async () => {
+    try {
+      await api.delete(`/familles/${selectedFamille.id}`);
+      setFamilles((prev) => prev.filter((f) => f.id !== selectedFamille.id));
+      setIsDeleteModalOpen(false);
+    } catch (err) {
+      alert(err.response?.data?.error || "Erreur lors de la suppression");
+      setIsDeleteModalOpen(false);
+    }
+  };
 
   return (
     <div
@@ -125,26 +139,23 @@ export const FamillesSection = ({ isFullPage = false }) => {
                     onEdit={() =>
                       navigate(`/stock/familles/${famille.id}/modifier`)
                     }
-                    onDelete={async () => {
-                      if (window.confirm("Confirmer la suppression ?")) {
-                        try {
-                          await api.delete(`/familles/${famille.id}`);
-                          setFamilles((prev) =>
-                            prev.filter((f) => f.id !== famille.id)
-                          );
-                        } catch (err) {
-                          alert(
-                            err.response?.data?.error ||
-                              "Erreur lors de la suppression"
-                          );
-                        }
-                      }
+                    onDelete={() => {
+                      setSelectedFamille(famille);
+                      setIsDeleteModalOpen(true);
                     }}
                   />
                 </td>
               </tr>
             ))}
           </tbody>
+
+          <ConfirmationModal
+            isOpen={isDeleteModalOpen}
+            onClose={() => setIsDeleteModalOpen(false)}
+            onConfirm={handleDelete}
+            title="Confirmer la suppression"
+            message={`Êtes-vous sûr de vouloir supprimer la famille "${selectedFamille?.nom}" ?`}
+          />
         </table>
 
         {filteredFamilles.length === 0 && !loading && (
