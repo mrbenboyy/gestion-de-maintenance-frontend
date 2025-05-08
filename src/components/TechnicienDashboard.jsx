@@ -16,12 +16,15 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import DashboardHeader from "./DashboardHeader";
 import api from "../utils/api";
 import { jwtDecode } from "jwt-decode";
+import { useNavigate } from "react-router-dom";
 
 const TechnicienDashboard = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [view, setView] = useState("month");
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedIntervention, setSelectedIntervention] = useState(null);
+  const navigate = useNavigate();
 
   // Fonction pour obtenir les couleurs selon le statut
   const getStatusStyles = (status) => {
@@ -74,6 +77,9 @@ const TechnicienDashboard = () => {
           }`,
           date: new Date(intervention.date_planifiee),
           status: intervention.status,
+          client: intervention.client_nom,
+          site: intervention.site_nom,
+          typeVisite: intervention.type_visite,
           ...getStatusStyles(intervention.status),
         }));
 
@@ -114,10 +120,63 @@ const TechnicienDashboard = () => {
               currentDate={currentDate}
               events={events}
               view={view}
+              onEventClick={setSelectedIntervention}
             />
           </div>
         )}
       </div>
+      {selectedIntervention && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4"
+          onClick={() => setSelectedIntervention(null)}
+        >
+          <div
+            className="bg-white rounded-lg p-6 max-w-md w-full"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="text-xl font-bold mb-4">
+              Détails de l'intervention
+            </h2>
+            <div className="space-y-2 mb-4">
+              <p>
+                <span className="font-semibold">Date planifiée :</span>
+                {format(selectedIntervention.date, "dd/MM/yyyy", {
+                  locale: fr,
+                })}
+              </p>
+              <p>
+                <span className="font-semibold">Client :</span>{" "}
+                {selectedIntervention.client}
+              </p>
+              <p>
+                <span className="font-semibold">Site :</span>{" "}
+                {selectedIntervention.site}
+              </p>
+              <p>
+                <span className="font-semibold">Type de visite :</span>{" "}
+                {selectedIntervention.typeVisite}
+              </p>
+            </div>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => {
+                  navigate(`/intervention/${selectedIntervention.id}`);
+                  setSelectedIntervention(null);
+                }}
+                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+              >
+                Commencer
+              </button>
+              <button
+                onClick={() => setSelectedIntervention(null)}
+                className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+              >
+                Fermer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -147,7 +206,7 @@ const CalendarHeader = ({
   </div>
 );
 
-const CalendarGrid = ({ currentDate, events }) => {
+const CalendarGrid = ({ currentDate, events, view, onEventClick }) => {
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(currentDate);
   const calendarStart = startOfWeek(monthStart, { weekStartsOn: 1 });
@@ -207,7 +266,10 @@ const CalendarGrid = ({ currentDate, events }) => {
                       {format(day, "d")}
                     </span>
                   </div>
-                  <CalendarEvents events={dayEvents} />
+                  <CalendarEvents
+                    events={dayEvents}
+                    onEventClick={onEventClick}
+                  />
                 </div>
               );
             })}
@@ -218,12 +280,13 @@ const CalendarGrid = ({ currentDate, events }) => {
   );
 };
 
-const CalendarEvents = ({ events }) => (
+const CalendarEvents = ({ events, onEventClick }) => (
   <div className="mt-1 space-y-1">
     {events.map((event) => (
       <div
         key={event.id}
-        className={`text-xs p-1 rounded truncate ${event.color} ${event.textColor}`}
+        className={`text-xs p-1 rounded truncate ${event.color} ${event.textColor} cursor-pointer hover:opacity-80`}
+        onClick={() => onEventClick(event)}
       >
         {event.title}
       </div>
