@@ -1,37 +1,79 @@
+import { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
-import { useNavigate } from "react-router-dom";
 import DashboardHeader from "../components/DashboardHeader";
+import api from "../utils/api";
 
 const InterventionDetails = () => {
+  const { id } = useParams();
   const navigate = useNavigate();
+  const [intervention, setIntervention] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [showStatusModal, setShowStatusModal] = useState(false);
 
-  // Données statiques temporaires
-  const intervention = {
-    id: 123,
-    technicien_nom: "Mohamed El Amrani",
-    technicien_email: "m.elamrani@example.com",
-    client_nom: "OCP Group",
-    site_nom: "Site minier Khouribga",
-    site_adresse: "Khouribga, Région de Béni Mellal-Khénifra",
-    date_planifiee: new Date("2024-03-15"),
-    status: "planifiee",
-    type_visite: "Deuxième visite",
-    lat: 32.88006,
-    lng: -6.90935,
+  // Fetch intervention data
+  useEffect(() => {
+    const fetchIntervention = async () => {
+      try {
+        const response = await api.get(`/interventions/${id}`);
+        setIntervention({
+          ...response.data,
+          date_planifiee: new Date(response.data.date_planifiee),
+        });
+      } catch (err) {
+        setError("Erreur lors du chargement des données");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchIntervention();
+  }, [id]);
+
+  // Handle status update
+  const handleArriveeSite = async () => {
+    try {
+      await api.patch(`/interventions/${id}/status`, { status: "en_cours" });
+      setIntervention((prev) => ({ ...prev, status: "en_cours" }));
+      setShowStatusModal(true);
+    } catch (err) {
+      setError("Échec de la mise à jour du statut");
+    }
   };
 
+  // Status styling
   const getStatusStyle = () => {
-    switch (intervention.status) {
+    switch (intervention?.status) {
       case "planifiee":
         return "bg-blue-100 text-blue-800";
       case "en_cours":
         return "bg-yellow-100 text-yellow-800";
       case "terminee":
         return "bg-green-100 text-green-800";
+      case "annulee":
+        return "bg-red-100 text-red-800";
       default:
         return "bg-gray-100 text-gray-800";
     }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <DashboardHeader />
+        <div className="text-center p-8">Chargement en cours...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <DashboardHeader />
+        <div className="text-center p-8 text-red-500">{error}</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -46,13 +88,13 @@ const InterventionDetails = () => {
             <ArrowLeft className="h-5 w-5" />
           </button>
           <h1 className="text-2xl font-bold text-gray-800">
-            Détails de l'intervention #{intervention.id}
+            Détails de l'intervention #{id}
           </h1>
         </div>
 
         <div className="bg-white rounded-lg shadow-sm p-6">
           <div className="grid md:grid-cols-2 gap-8 mb-8">
-            {/* Colonne gauche */}
+            {/* Left Column */}
             <div className="space-y-6">
               <div>
                 <label className="block text-sm font-medium text-gray-500 mb-2">
@@ -76,22 +118,19 @@ const InterventionDetails = () => {
               </div>
             </div>
 
-            {/* Colonne droite */}
+            {/* Right Column */}
             <div className="space-y-6">
               <div>
                 <label className="block text-sm font-medium text-gray-500 mb-2">
                   Date planifiée
                 </label>
                 <p className="font-medium text-gray-900">
-                  {new Date(intervention.date_planifiee).toLocaleDateString(
-                    "fr-FR",
-                    {
-                      weekday: "long",
-                      year: "numeric",
-                      month: "long",
-                      day: "numeric",
-                    }
-                  )}
+                  {intervention.date_planifiee.toLocaleDateString("fr-FR", {
+                    weekday: "long",
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                  })}
                 </p>
               </div>
 
@@ -118,7 +157,7 @@ const InterventionDetails = () => {
             </div>
           </div>
 
-          {/* Section Carte */}
+          {/* Map Section */}
           <div className="mb-8">
             <h2 className="text-lg font-semibold text-gray-800 mb-4">
               Localisation du site
@@ -134,10 +173,10 @@ const InterventionDetails = () => {
             </div>
           </div>
 
-          {/* Actions */}
-          <div className="flex flex-col sm:flex-row gap-4 mt-8">
+          {/* Action Buttons */}
+          <div className="flex flex-col sm:flex-row justify-center gap-4 mt-8">
             <button
-              className="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+              className="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
               onClick={() =>
                 window.open(
                   `https://www.google.com/maps/dir/?api=1&destination=${intervention.lat},${intervention.lng}`,
@@ -148,12 +187,45 @@ const InterventionDetails = () => {
               Ouvrir dans Google Maps
             </button>
 
-            <button className="px-6 py-3 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors">
-              Marquer comme arrivé
-            </button>
+            {intervention.status === "planifiee" && (
+              <button
+                className="px-6 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+                onClick={handleArriveeSite}
+              >
+                Arrivé sur site
+              </button>
+            )}
           </div>
         </div>
       </div>
+
+      {/* Status Update Modal */}
+      {showStatusModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full">
+            <h2 className="text-xl font-bold mb-4">Intervention en cours</h2>
+            <p className="mb-6">
+              L'intervention a été marquée comme commencée. Vous pouvez
+              maintenant remplir la fiche de vérification.
+            </p>
+
+            <div className="flex justify-end gap-4">
+              <button
+                className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+                onClick={() => setShowStatusModal(false)}
+              >
+                Fermer
+              </button>
+              <button
+                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                onClick={() => navigate(`/fiche-verification/${id}`)}
+              >
+                Aller à la fiche
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
