@@ -1,5 +1,4 @@
-// src/components/Calendar.js
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   format,
   addMonths,
@@ -15,27 +14,79 @@ import {
 import { fr } from "date-fns/locale";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import DashboardHeader from "./DashboardHeader";
+import api from "../utils/api";
+import { jwtDecode } from "jwt-decode";
 
 const TechnicienDashboard = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [view, setView] = useState("month");
+  const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const [events] = useState([
-    {
-      id: "1",
-      title: "Intervention Client A",
-      date: new Date(),
-      color: "bg-blue-100 border-l-4 border-blue-400",
-      textColor: "text-blue-800",
-    },
-    {
-      id: "2",
-      title: "Maintenance préventive",
-      date: new Date(),
-      color: "bg-green-100 border-l-4 border-green-400",
-      textColor: "text-green-800",
-    },
-  ]);
+  // Fonction pour obtenir les couleurs selon le statut
+  const getStatusStyles = (status) => {
+    switch (status) {
+      case "planifiee":
+        return {
+          color: "bg-blue-100 border-l-4 border-blue-400",
+          textColor: "text-blue-800",
+        };
+      case "en_cours":
+        return {
+          color: "bg-yellow-100 border-l-4 border-yellow-400",
+          textColor: "text-yellow-800",
+        };
+      case "terminee":
+        return {
+          color: "bg-green-100 border-l-4 border-green-400",
+          textColor: "text-green-800",
+        };
+      case "annulee":
+        return {
+          color: "bg-red-100 border-l-4 border-red-400",
+          textColor: "text-red-800",
+        };
+      default:
+        return {
+          color: "bg-gray-100 border-l-4 border-gray-400",
+          textColor: "text-gray-800",
+        };
+    }
+  };
+
+  // Récupérer les interventions du technicien
+  useEffect(() => {
+    const fetchInterventions = async () => {
+      try {
+        // Récupérer l'ID du technicien depuis le token
+        const token = localStorage.getItem("token");
+        const decoded = jwtDecode(token);
+        const technicienId = decoded.id;
+
+        const response = await api.get(
+          `/interventions/technicien/${technicienId}`
+        );
+
+        const formattedEvents = response.data.map((intervention) => ({
+          id: intervention.id,
+          title: `${intervention.site_nom || "Client inconnu"} - ${
+            intervention.type_visite
+          }`,
+          date: new Date(intervention.date_planifiee),
+          status: intervention.status,
+          ...getStatusStyles(intervention.status),
+        }));
+
+        setEvents(formattedEvents);
+      } catch (error) {
+        console.error("Erreur lors du chargement des interventions:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchInterventions();
+  }, []);
 
   const handlePreviousMonth = () =>
     setCurrentDate((prev) => subMonths(prev, 1));
@@ -48,16 +99,24 @@ const TechnicienDashboard = () => {
       <div className="container mx-auto px-4 py-6 max-w-7xl">
         <h1 className="text-2xl font-bold text-gray-800 mb-6">Mon planning</h1>
 
-        <div className="bg-white rounded-md shadow-sm overflow-hidden">
-          <CalendarHeader
-            currentDate={currentDate}
-            onPrevious={handlePreviousMonth}
-            onNext={handleNextMonth}
-            view={view}
-            onViewChange={setView}
-          />
-          <CalendarGrid currentDate={currentDate} events={events} view={view} />
-        </div>
+        {loading ? (
+          <div className="text-center p-4">Chargement des interventions...</div>
+        ) : (
+          <div className="bg-white rounded-md shadow-sm overflow-hidden">
+            <CalendarHeader
+              currentDate={currentDate}
+              onPrevious={handlePreviousMonth}
+              onNext={handleNextMonth}
+              view={view}
+              onViewChange={setView}
+            />
+            <CalendarGrid
+              currentDate={currentDate}
+              events={events}
+              view={view}
+            />
+          </div>
+        )}
       </div>
     </div>
   );
@@ -84,24 +143,6 @@ const CalendarHeader = ({
       <button onClick={onNext} className="p-1 hover:bg-gray-100 rounded-full">
         <ChevronRight className="h-5 w-5" />
       </button>
-    </div>
-
-    <div className="flex gap-2">
-      <div className="flex items-center rounded-full bg-gray-100">
-        {["day", "week", "month"].map((v) => (
-          <button
-            key={v}
-            onClick={() => onViewChange(v)}
-            className={`rounded-full text-sm h-8 px-4 ${
-              view === v ? "bg-red-600 text-white shadow-sm" : "hover:bg-red-200"
-            }`}
-          >
-            {v === "day" && "Jour"}
-            {v === "week" && "Semaine"}
-            {v === "month" && "Mois"}
-          </button>
-        ))}
-      </div>
     </div>
   </div>
 );
