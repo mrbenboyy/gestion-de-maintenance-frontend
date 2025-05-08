@@ -16,6 +16,8 @@ const InterventionForm = () => {
     type_visite: "premiere",
   });
   const [selectedSite, setSelectedSite] = useState(null);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [createdIntervention, setCreatedIntervention] = useState(null);
 
   // Chargement des clients et techniciens au montage
   useEffect(() => {
@@ -83,11 +85,13 @@ const InterventionForm = () => {
     e.preventDefault();
     try {
       const userId = localStorage.getItem("userId");
-      await api.post("/interventions", {
+      const response = await api.post("/interventions", {
         ...formData,
         status: "planifiee",
         created_by: userId,
       });
+      setCreatedIntervention(response.data);
+      setShowSuccessModal(true);
       toast.success("Intervention planifiée avec succès !");
       // Réinitialisation du formulaire
       setFormData({
@@ -116,6 +120,42 @@ const InterventionForm = () => {
       </div>
     );
   }
+
+  const handleNotifyTechnicien = async () => {
+    try {
+      await api.post(`/interventions/${createdIntervention.id}/notify`);
+      toast.success("Notification envoyée au technicien !");
+      setShowSuccessModal(false);
+    } catch (error) {
+      toast.error("Erreur lors de l'envoi de la notification");
+    }
+  };
+
+  const SuccessModal = () => (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-lg p-6 max-w-md w-full">
+        <h3 className="text-lg font-semibold mb-4">
+          ✅ Intervention créée avec succès
+        </h3>
+        <p className="mb-4">Que souhaitez-vous faire ensuite ?</p>
+
+        <div className="flex gap-4 justify-end">
+          <button
+            onClick={handleNotifyTechnicien}
+            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+          >
+            Notifier le technicien
+          </button>
+          <button
+            onClick={() => setShowSuccessModal(false)}
+            className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+          >
+            Fermer
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <div className="max-w-3xl mx-auto">
@@ -268,6 +308,7 @@ const InterventionForm = () => {
             </button>
           </div>
         </form>
+        {showSuccessModal && <SuccessModal />}
       </div>
     </div>
   );
