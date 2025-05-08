@@ -31,6 +31,7 @@ import EditArticle from "./pages/EditArticle";
 import EditAppareil from "./pages/EditAppareil";
 import Layout from "./components/Layout";
 import PlanifierIntervention from "./components/PlannifierIntervention";
+import InterventionDetails from "./pages/InterventionDetails";
 
 function App() {
   return (
@@ -218,6 +219,14 @@ function App() {
             element={
               <Layout>
                 <TechnicienDashboard />
+              </Layout>
+            }
+          />
+          <Route
+            path="/intervention/:id"
+            element={
+              <Layout>
+                <InterventionDetails />
               </Layout>
             }
           />
