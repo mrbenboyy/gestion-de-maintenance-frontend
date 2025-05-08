@@ -5,3 +5,4 @@ npm install react-icons
 npm install recharts lucide-react
 npm install leaflet react-leaflet
 npm i react-toastify
+npm install date-fns@2.30.0
