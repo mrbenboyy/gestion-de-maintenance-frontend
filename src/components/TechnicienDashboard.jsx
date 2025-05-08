@@ -157,15 +157,15 @@ const TechnicienDashboard = () => {
                 {selectedIntervention.typeVisite}
               </p>
             </div>
-            <div className="flex justify-end gap-2">
+            <div className="flex justify-center gap-10">
               <button
                 onClick={() => {
                   navigate(`/intervention/${selectedIntervention.id}`);
                   setSelectedIntervention(null);
                 }}
-                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                className="px-4 py-2 bg-green-600 text-white rounded hover:bg-blue-700"
               >
-                Commencer
+                Voir détails
               </button>
               <button
                 onClick={() => setSelectedIntervention(null)}
