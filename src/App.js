@@ -32,6 +32,7 @@ import EditAppareil from "./pages/EditAppareil";
 import Layout from "./components/Layout";
 import PlanifierIntervention from "./components/PlannifierIntervention";
 import InterventionDetails from "./pages/InterventionDetails";
+import FicheVerification from "./components/FicheVerification";
 
 function App() {
   return (
@@ -227,6 +228,14 @@ function App() {
             element={
               <Layout>
                 <InterventionDetails />
+              </Layout>
+            }
+          />
+          <Route
+            path="/fiche-verification/:id"
+            element={
+              <Layout>
+                <FicheVerification />
               </Layout>
             }
           />

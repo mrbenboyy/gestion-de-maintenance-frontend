@@ -10,7 +10,6 @@ const InterventionDetails = () => {
   const [intervention, setIntervention] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [showStatusModal, setShowStatusModal] = useState(false);
 
   // Fetch intervention data
   useEffect(() => {
@@ -34,8 +33,8 @@ const InterventionDetails = () => {
   const handleArriveeSite = async () => {
     try {
       await api.patch(`/interventions/${id}/status`, { status: "en_cours" });
-      setIntervention((prev) => ({ ...prev, status: "en_cours" }));
-      setShowStatusModal(true);
+      // Redirection directe vers la fiche
+      navigate(`/fiche-verification/${id}`);
     } catch (err) {
       setError("Échec de la mise à jour du statut");
     }
@@ -114,6 +113,15 @@ const InterventionDetails = () => {
                 </label>
                 <p className="font-medium text-gray-900">
                   {intervention.client_nom}
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-500 mb-2">
+                  Site
+                </label>
+                <p className="font-medium text-gray-900">
+                  {intervention.site_nom}
                 </p>
               </div>
             </div>
@@ -198,34 +206,6 @@ const InterventionDetails = () => {
           </div>
         </div>
       </div>
-
-      {/* Status Update Modal */}
-      {showStatusModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full">
-            <h2 className="text-xl font-bold mb-4">Intervention en cours</h2>
-            <p className="mb-6">
-              L'intervention a été marquée comme commencée. Vous pouvez
-              maintenant remplir la fiche de vérification.
-            </p>
-
-            <div className="flex justify-end gap-4">
-              <button
-                className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
-                onClick={() => setShowStatusModal(false)}
-              >
-                Fermer
-              </button>
-              <button
-                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                onClick={() => navigate(`/fiche-verification/${id}`)}
-              >
-                Aller à la fiche
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
