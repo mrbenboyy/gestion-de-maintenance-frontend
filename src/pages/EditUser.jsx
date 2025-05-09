@@ -12,13 +12,15 @@ const EditUser = () => {
     email: "",
     mot_de_passe: "",
     role: "admin",
-    region: "",
-    depot: "",
+    region_id: "",
+    depot_id: "",
   });
   const [existingImage, setExistingImage] = useState("");
   const [newImage, setNewImage] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [regions, setRegions] = useState([]);
+  const [depots, setDepots] = useState([]);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -30,8 +32,8 @@ const EditUser = () => {
           email: user.email,
           mot_de_passe: "",
           role: user.role,
-          region: user.region || "",
-          depot: user.depot || "",
+          region_id: user.region_id || "",
+          depot_id: user.depot_id || "",
         });
         setExistingImage(user.image);
       } catch (err) {
@@ -61,8 +63,8 @@ const EditUser = () => {
     formData.append("email", form.email);
     formData.append("role", form.role);
     if (form.mot_de_passe) formData.append("mot_de_passe", form.mot_de_passe);
-    formData.append("region", form.region);
-    formData.append("depot", form.depot);
+    formData.append("region_id", form.region_id);
+    formData.append("depot_id", form.depot_id);
     if (newImage) formData.append("image", newImage);
 
     try {
@@ -77,6 +79,19 @@ const EditUser = () => {
       setLoading(false);
     }
   };
+
+  // Charger les régions et dépôts
+  useEffect(() => {
+    const fetchData = async () => {
+      const [regionsRes, depotsRes] = await Promise.all([
+        api.get("/regions"),
+        api.get("/depots"),
+      ]);
+      setRegions(regionsRes.data);
+      setDepots(depotsRes.data);
+    };
+    fetchData();
+  }, []);
 
   return (
     <div className="flex">
@@ -191,27 +206,37 @@ const EditUser = () => {
                 <>
                   <div>
                     <label className="block text-sm mb-1">Région</label>
-                    <input
-                      type="text"
-                      name="region"
-                      placeholder="Nom de la région"
-                      value={form.region}
+                    <select
+                      name="region_id"
+                      value={form.region_id}
                       onChange={handleChange}
                       className="w-full border rounded px-4 py-2"
-                      required={form.role === "technicien"}
-                    />
+                      required
+                    >
+                      <option value="">Sélectionner une région</option>
+                      {regions.map((region) => (
+                        <option key={region.id} value={region.id}>
+                          {region.nom}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                   <div>
                     <label className="block text-sm mb-1">Dépôt</label>
-                    <input
-                      type="text"
-                      name="depot"
-                      placeholder="Nom du dépôt"
-                      value={form.depot}
+                    <select
+                      name="depot_id"
+                      value={form.depot_id}
                       onChange={handleChange}
                       className="w-full border rounded px-4 py-2"
-                      required={form.role === "technicien"}
-                    />
+                      required
+                    >
+                      <option value="">Sélectionner un dépôt</option>
+                      {depots.map((depot) => (
+                        <option key={depot.id} value={depot.id}>
+                          {depot.nom}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                 </>
               )}
