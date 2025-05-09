@@ -7,6 +7,7 @@ import api from "../utils/api";
 const AddUser = () => {
   const navigate = useNavigate();
   const [regions, setRegions] = useState([]);
+  const [depots, setDepots] = useState([]);
   const [form, setForm] = useState({
     nom: "",
     email: "",
@@ -56,17 +57,21 @@ const AddUser = () => {
     }
   };
 
-  // Charger les régions
+  // Charger les régions ET les dépôts
   useEffect(() => {
-    const fetchRegions = async () => {
+    const fetchInitialData = async () => {
       try {
-        const response = await api.get("/regions");
-        setRegions(response.data);
+        const [regionsResponse, depotsResponse] = await Promise.all([
+          api.get("/regions"),
+          api.get("/depots"), // Nouvel appel API
+        ]);
+        setRegions(regionsResponse.data);
+        setDepots(depotsResponse.data);
       } catch (err) {
-        console.error("Erreur récupération régions:", err);
+        console.error("Erreur récupération données:", err);
       }
     };
-    fetchRegions();
+    fetchInitialData();
   }, []);
 
   return (
@@ -192,15 +197,20 @@ const AddUser = () => {
                   </div>
                   <div>
                     <label className="block text-sm mb-1">Dépôt</label>
-                    <input
-                      type="text"
-                      name="depot"
-                      placeholder="Nom du dépôt"
-                      value={form.depot}
+                    <select
+                      name="depot_id"
+                      value={form.depot_id}
                       onChange={handleChange}
                       className="w-full border rounded px-4 py-2"
                       required={form.role === "technicien"}
-                    />
+                    >
+                      <option value="">Sélectionner un dépôt</option>
+                      {depots.map((depot) => (
+                        <option key={depot.id} value={depot.id}>
+                          {depot.nom}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                 </>
               )}
