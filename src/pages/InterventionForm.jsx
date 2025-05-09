@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { CalendarIcon, ChevronDown } from "lucide-react";
 import api from "../utils/api";
 import { toast } from "react-toastify";
@@ -7,7 +7,6 @@ const InterventionForm = () => {
   const [clients, setClients] = useState([]);
   const [sites, setSites] = useState([]);
   const [techniciens, setTechniciens] = useState([]);
-  const [regions, setRegions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState({
     date_planifiee: "",
@@ -15,26 +14,22 @@ const InterventionForm = () => {
     site_id: "",
     technicien_id: "",
     type_visite: "premiere",
-    region_id: "",
   });
   const [selectedSite, setSelectedSite] = useState(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [createdIntervention, setCreatedIntervention] = useState(null);
 
-  // Chargement des données initiales
+  // Chargement des clients et techniciens au montage
   useEffect(() => {
     const fetchInitialData = async () => {
       try {
-        const [clientsResponse, techniciensResponse, regionsResponse] =
-          await Promise.all([
-            api.get("/clients"),
-            api.get("/users/techniciens"),
-            api.get("/regions"),
-          ]);
+        const [clientsResponse, techniciensResponse] = await Promise.all([
+          api.get("/clients"),
+          api.get("/users/techniciens"),
+        ]);
 
         setClients(clientsResponse.data);
         setTechniciens(techniciensResponse.data);
-        setRegions(regionsResponse.data);
       } catch (error) {
         toast.error("Erreur lors du chargement des données initiales");
       } finally {
@@ -52,31 +47,23 @@ const InterventionForm = () => {
         try {
           const response = await api.get(`/sites/client/${formData.client_id}`);
           setSites(response.data);
-          setFormData((prev) => ({
-            ...prev,
-            site_id: "",
-            technicien_id: "",
-            region_id: "",
-          }));
+          // Réinitialiser le site sélectionné quand le client change
+          setFormData((prev) => ({ ...prev, site_id: "", technicien_id: "" }));
         } catch (error) {
           toast.error("Erreur lors du chargement des sites");
         }
       }
     };
+
     fetchClientSites();
   }, [formData.client_id]);
 
-  // Chargement des détails du site et mise à jour de la région
   useEffect(() => {
     const fetchSiteDetails = async () => {
       if (formData.site_id) {
         try {
           const response = await api.get(`/sites/${formData.site_id}`);
           setSelectedSite(response.data);
-          setFormData((prev) => ({
-            ...prev,
-            region_id: response.data.region_id,
-          }));
         } catch (error) {
           toast.error("Erreur lors du chargement des détails du site");
         }
@@ -84,6 +71,15 @@ const InterventionForm = () => {
     };
     fetchSiteDetails();
   }, [formData.site_id]);
+
+  // Filtrer les techniciens par région
+  const filteredTechniciens = useMemo(() => {
+    if (!selectedSite?.region) return [];
+    return techniciens.filter(
+      (tech) =>
+        tech.region?.toLowerCase() === selectedSite.region?.toLowerCase()
+    );
+  }, [selectedSite, techniciens]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -97,17 +93,22 @@ const InterventionForm = () => {
       setCreatedIntervention(response.data);
       setShowSuccessModal(true);
       toast.success("Intervention planifiée avec succès !");
+      // Réinitialisation du formulaire
       setFormData({
         date_planifiee: "",
         client_id: "",
         site_id: "",
         technicien_id: "",
         type_visite: "premiere",
-        region_id: "",
       });
       setSites([]);
     } catch (error) {
-      toast.error(error.response?.data?.error || "Erreur lors de la création");
+      console.error("Erreur complète:", error.response?.data);
+      toast.error(
+        error.response?.data?.error ||
+          error.response?.data?.message ||
+          "Erreur lors de la création"
+      );
     }
   };
 
@@ -163,7 +164,7 @@ const InterventionForm = () => {
       </h1>
       <div className="bg-white rounded-lg shadow-sm border">
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          {/* Champ Date */}
+          {/* Date d'intervention */}
           <div className="space-y-2">
             <label className="block text-sm font-medium text-gray-700">
               Date d'intervention
@@ -237,7 +238,7 @@ const InterventionForm = () => {
             </div>
           </div>
 
-          {/* Technicien assigné (sans filtre de région) */}
+          {/* Technicien assigné */}
           <div className="space-y-2">
             <label className="block text-sm font-medium text-gray-700">
               Technicien assigné
@@ -255,36 +256,13 @@ const InterventionForm = () => {
                 <option value="">
                   {!selectedSite
                     ? "Sélectionnez d'abord un site"
+                    : filteredTechniciens.length === 0
+                    ? `Aucun technicien en ${selectedSite?.region}`
                     : "Sélectionner le technicien"}
                 </option>
-                {techniciens.map((tech) => (
+                {filteredTechniciens.map((tech) => (
                   <option key={tech.id} value={tech.id}>
-                    {tech.nom} ({tech.depot})
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="absolute right-3 top-2.5 h-5 w-5 text-gray-400 pointer-events-none" />
-            </div>
-          </div>
-
-          {/* Région */}
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">
-              Région
-            </label>
-            <div className="relative">
-              <select
-                required
-                className="w-full p-2 bg-gray-50 border border-gray-200 rounded-md appearance-none"
-                value={formData.region_id}
-                onChange={(e) =>
-                  setFormData({ ...formData, region_id: e.target.value })
-                }
-              >
-                <option value="">Sélectionner la région</option>
-                {regions.map((region) => (
-                  <option key={region.id} value={region.id}>
-                    {region.nom}
+                    {tech.nom} ({tech.region} - {tech.depot})
                   </option>
                 ))}
               </select>
