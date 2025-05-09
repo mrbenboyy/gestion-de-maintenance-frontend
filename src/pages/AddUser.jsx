@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import DashboardHeader from "../components/DashboardHeader";
 import { FiArrowLeft, FiCamera } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
@@ -6,6 +6,7 @@ import api from "../utils/api";
 
 const AddUser = () => {
   const navigate = useNavigate();
+  const [regions, setRegions] = useState([]);
   const [form, setForm] = useState({
     nom: "",
     email: "",
@@ -54,6 +55,19 @@ const AddUser = () => {
       setLoading(false);
     }
   };
+
+  // Charger les régions
+  useEffect(() => {
+    const fetchRegions = async () => {
+      try {
+        const response = await api.get("/regions");
+        setRegions(response.data);
+      } catch (err) {
+        console.error("Erreur récupération régions:", err);
+      }
+    };
+    fetchRegions();
+  }, []);
 
   return (
     <div className="flex">
@@ -152,9 +166,7 @@ const AddUser = () => {
                   <option value="responsable_planning">
                     Responsable planning
                   </option>
-                  <option value="assistante">
-                    Assistant
-                  </option>
+                  <option value="assistante">Assistant</option>
                   <option value="technicien">Technicien</option>
                 </select>
               </div>
@@ -163,15 +175,20 @@ const AddUser = () => {
                 <>
                   <div>
                     <label className="block text-sm mb-1">Région</label>
-                    <input
-                      type="text"
+                    <select
                       name="region"
-                      placeholder="Nom de la région"
                       value={form.region}
                       onChange={handleChange}
                       className="w-full border rounded px-4 py-2"
                       required={form.role === "technicien"}
-                    />
+                    >
+                      <option value="">Sélectionner une région</option>
+                      {regions.map((region) => (
+                        <option key={region.id} value={region.nom}>
+                          {region.nom}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                   <div>
                     <label className="block text-sm mb-1">Dépôt</label>

@@ -22,6 +22,7 @@ L.Icon.Default.mergeOptions({
 });
 
 const AddSite = () => {
+  const [regions, setRegions] = useState([]);
   const navigate = useNavigate();
   const [form, setForm] = useState({
     nom: "",
@@ -29,10 +30,22 @@ const AddSite = () => {
     type_site: "Agence",
     adresse: "",
     nombre_visites_annuelles: 1,
-    region: "",
+    region_id: "",
     lat: "",
     lng: "",
   });
+
+  useEffect(() => {
+    const fetchRegions = async () => {
+      try {
+        const response = await api.get("/regions");
+        setRegions(response.data);
+      } catch (err) {
+        console.error("Erreur lors de la récupération des régions:", err);
+      }
+    };
+    fetchRegions();
+  }, []);
 
   const [mapCenter] = useState([33.5731, -7.5898]);
   const [markerPosition, setMarkerPosition] = useState(null);
@@ -72,7 +85,7 @@ const AddSite = () => {
     if (!form.nom.trim()) newErrors.nom = "Champ obligatoire";
     if (!form.client_id) newErrors.client_id = "Champ obligatoire";
     if (!form.adresse.trim()) newErrors.adresse = "Champ obligatoire";
-    if (!form.region.trim()) newErrors.region = "Champ obligatoire";
+    if (!form.region_id) newErrors.region_id = "Champ obligatoire";
     if (!form.lat || !form.lng) newErrors.localisation = "Position requise";
     if (![1, 2].includes(Number(form.nombre_visites_annuelles))) {
       newErrors.nombre_visites_annuelles = "Doit être 1 ou 2";
@@ -272,21 +285,26 @@ const AddSite = () => {
                   {/* Région */}
                   <div>
                     <label className="block text-sm mb-1">Région *</label>
-                    <input
-                      type="text"
-                      name="region"
-                      value={form.region}
+                    <select
+                      name="region_id"
+                      value={form.region_id}
                       onChange={(e) =>
-                        setForm({ ...form, region: e.target.value })
+                        setForm({ ...form, region_id: e.target.value })
                       }
-                      placeholder="Ex: Casablanca-Settat"
                       className={`w-full border rounded px-3 py-2 text-sm ${
-                        errors.region ? "border-red-500" : ""
+                        errors.region_id ? "border-red-500" : ""
                       }`}
-                    />
-                    {errors.region && (
+                    >
+                      <option value="">Sélectionner la région</option>
+                      {regions.map((region) => (
+                        <option key={region.id} value={region.id}>
+                          {region.nom}
+                        </option>
+                      ))}
+                    </select>
+                    {errors.region_id && (
                       <p className="text-red-500 text-sm mt-1">
-                        {errors.region}
+                        {errors.region_id}
                       </p>
                     )}
                   </div>
