@@ -41,6 +41,7 @@ const EditSite = () => {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const [clients, setClients] = useState([]);
+  const [regions, setRegions] = useState([]);
 
   // Charger les données existantes
   useEffect(() => {
@@ -55,6 +56,7 @@ const EditSite = () => {
         setForm({
           ...site,
           client_id: site.client_id.toString(),
+          region_id: site.region_id.toString(),
           lat: site.lat.toString(),
           lng: site.lng.toString(),
         });
@@ -69,12 +71,15 @@ const EditSite = () => {
   const MapClickHandler = () => {
     useMapEvents({
       click: (e) => {
-        setMarkerPosition(e.latlng);
-        setForm((prev) => ({
-          ...prev,
-          lat: e.latlng.lat.toFixed(6),
-          lng: e.latlng.lng.toFixed(6),
-        }));
+        const newPos = [e.latlng.lat, e.latlng.lng];
+        if (newPos.every(Number.isFinite)) {
+          setMarkerPosition(newPos);
+          setForm((prev) => ({
+            ...prev,
+            lat: e.latlng.lat.toFixed(6),
+            lng: e.latlng.lng.toFixed(6),
+          }));
+        }
       },
     });
     return null;
@@ -85,8 +90,8 @@ const EditSite = () => {
     if (!form.nom.trim()) newErrors.nom = "Champ obligatoire";
     if (!form.client_id) newErrors.client_id = "Champ obligatoire";
     if (!form.adresse.trim()) newErrors.adresse = "Champ obligatoire";
-    if (!form.region.trim()) newErrors.region = "Champ obligatoire";
     if (!form.lat || !form.lng) newErrors.localisation = "Position requise";
+    if (!form.region_id) newErrors.region = "Champ obligatoire";
     if (![1, 2].includes(Number(form.nombre_visites_annuelles))) {
       newErrors.nombre_visites_annuelles = "Doit être 1 ou 2";
     }
@@ -130,12 +135,16 @@ const EditSite = () => {
   };
 
   useEffect(() => {
-    if (form.lat && form.lng) {
-      const lat = parseFloat(form.lat);
-      const lng = parseFloat(form.lng);
-      if (!isNaN(lat) && !isNaN(lng)) {
-        setMarkerPosition([lat, lng]);
-      }
+    const lat = parseFloat(form.lat);
+    const lng = parseFloat(form.lng);
+
+    if (
+      !isNaN(lat) &&
+      !isNaN(lng) &&
+      Number.isFinite(lat) &&
+      Number.isFinite(lng)
+    ) {
+      setMarkerPosition([lat, lng]);
     } else {
       setMarkerPosition(null);
     }
@@ -143,11 +152,27 @@ const EditSite = () => {
 
   const MapUpdater = ({ center, zoom }) => {
     const map = useMap();
+
     useEffect(() => {
-      map.setView(center, zoom);
+      if (center && Array.isArray(center) && center.every(Number.isFinite)) {
+        map.setView(center, zoom, { animate: false });
+      }
     }, [center, zoom, map]);
+
     return null;
   };
+
+  useEffect(() => {
+    const fetchRegions = async () => {
+      try {
+        const response = await api.get("/regions");
+        setRegions(response.data);
+      } catch (err) {
+        console.error("Erreur récupération régions:", err);
+      }
+    };
+    fetchRegions();
+  }, []);
 
   return (
     <div className="flex">
@@ -282,18 +307,23 @@ const EditSite = () => {
                   {/* Région */}
                   <div>
                     <label className="block text-sm mb-1">Région *</label>
-                    <input
-                      type="text"
-                      name="region"
-                      value={form.region}
+                    <select
+                      name="region_id"
+                      value={form.region_id}
                       onChange={(e) =>
-                        setForm({ ...form, region: e.target.value })
+                        setForm({ ...form, region_id: e.target.value })
                       }
-                      placeholder="Ex: Casablanca-Settat"
                       className={`w-full border rounded px-3 py-2 text-sm ${
                         errors.region ? "border-red-500" : ""
                       }`}
-                    />
+                    >
+                      <option value="">Sélectionner une région</option>
+                      {regions.map((region) => (
+                        <option key={region.id} value={region.id}>
+                          {region.nom}
+                        </option>
+                      ))}
+                    </select>
                     {errors.region && (
                       <p className="text-red-500 text-sm mt-1">
                         {errors.region}
@@ -353,17 +383,27 @@ const EditSite = () => {
                 <div className="md:col-span-2">
                   <div className="h-64 rounded-lg overflow-hidden mt-4">
                     <MapContainer
-                      key={`${form.lat}-${form.lng}`}
                       center={mapCenter}
                       zoom={13}
                       className="h-full w-full"
+                      preferCanvas={true}
+                      whenReady={(map) => {
+                        if (markerPosition) {
+                          map.target.setView(markerPosition, 13);
+                        }
+                      }}
                     >
                       <TileLayer
                         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                       />
                       <MapClickHandler />
-                      {markerPosition && <Marker position={markerPosition} />}
+                      {markerPosition && Array.isArray(markerPosition) && (
+                        <Marker
+                          position={markerPosition}
+                          key={`${markerPosition[0]}-${markerPosition[1]}`}
+                        />
+                      )}
                       <MapUpdater
                         center={markerPosition || mapCenter}
                         zoom={13}
