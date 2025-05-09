@@ -13,8 +13,8 @@ const AddUser = () => {
     email: "",
     mot_de_passe: "",
     role: "admin",
-    region: "",
-    depot: "",
+    region_id: "",
+    depot_id: "",
   });
   const [image, setImage] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -40,8 +40,8 @@ const AddUser = () => {
     formData.append("email", form.email);
     formData.append("mot_de_passe", form.mot_de_passe);
     formData.append("role", form.role);
-    formData.append("region", form.region);
-    formData.append("depot", form.depot);
+    formData.append("region_id", form.region_id);
+    formData.append("depot_id", form.depot_id);
     if (image) formData.append("image", image);
 
     try {
@@ -181,15 +181,15 @@ const AddUser = () => {
                   <div>
                     <label className="block text-sm mb-1">Région</label>
                     <select
-                      name="region"
-                      value={form.region}
+                      name="region_id"
+                      value={form.region_id}
                       onChange={handleChange}
                       className="w-full border rounded px-4 py-2"
                       required={form.role === "technicien"}
                     >
                       <option value="">Sélectionner une région</option>
                       {regions.map((region) => (
-                        <option key={region.id} value={region.nom}>
+                        <option key={region.id} value={region.id}>
                           {region.nom}
                         </option>
                       ))}
