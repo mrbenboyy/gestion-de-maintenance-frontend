@@ -3,6 +3,8 @@ import DashboardHeader from "../components/DashboardHeader";
 import { FiArrowLeft, FiCamera } from "react-icons/fi";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../utils/api";
+import ImageCropper from "../components/ImageCropper";
+import { getCroppedImg } from "../utils/cropImage";
 
 const EditUser = () => {
   const navigate = useNavigate();
@@ -21,6 +23,8 @@ const EditUser = () => {
   const [error, setError] = useState("");
   const [regions, setRegions] = useState([]);
   const [depots, setDepots] = useState([]);
+  const [showCropper, setShowCropper] = useState(false);
+  const [selectedImage, setSelectedImage] = useState(null); // pour afficher l'image originale à recadrer
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -48,9 +52,20 @@ const EditUser = () => {
   };
 
   const handleImageUpload = (e) => {
-    if (e.target.files[0]) {
-      setNewImage(e.target.files[0]);
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setSelectedImage(reader.result); // base64 pour cropper
+        setShowCropper(true);
+      };
+      reader.readAsDataURL(file);
     }
+  };
+
+  const handleCropComplete = (croppedImage) => {
+    setNewImage(croppedImage);
+    setShowCropper(false);
   };
 
   const handleSubmit = async (e) => {
@@ -63,8 +78,13 @@ const EditUser = () => {
     formData.append("email", form.email);
     formData.append("role", form.role);
     if (form.mot_de_passe) formData.append("mot_de_passe", form.mot_de_passe);
-    formData.append("region_id", form.region_id);
-    formData.append("depot_id", form.depot_id);
+    if (form.region_id) {
+      formData.append("region_id", form.region_id);
+    }
+    if (form.depot_id) {
+      formData.append("depot_id", form.depot_id);
+    }
+
     if (newImage) formData.append("image", newImage);
 
     try {
@@ -92,6 +112,16 @@ const EditUser = () => {
     };
     fetchData();
   }, []);
+
+  if (showCropper && selectedImage) {
+    return (
+      <ImageCropper
+        imageSrc={selectedImage}
+        onCancel={() => setShowCropper(false)}
+        onCropComplete={handleCropComplete}
+      />
+    );
+  }
 
   return (
     <div className="flex">
