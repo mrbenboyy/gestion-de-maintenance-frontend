@@ -4,7 +4,7 @@ import Sidebar from "../components/SideBar";
 import DashboardHeader from "../components/DashboardHeader";
 import { FiArrowLeft, FiCamera } from "react-icons/fi";
 import api from "../utils/api";
-import ConfirmationModal from "../components/ConfirmationModal";
+import ImageCropper from "../components/ImageCropper";
 
 const EditFamille = () => {
   const { id } = useParams();
@@ -14,6 +14,8 @@ const EditFamille = () => {
   const [existingImage, setExistingImage] = useState("");
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [cropping, setCropping] = useState(false);
+  const [imageSrc, setImageSrc] = useState(null);
 
   useEffect(() => {
     const fetchFamille = async () => {
@@ -38,9 +40,25 @@ const EditFamille = () => {
       return;
     }
 
-    setImage(file);
-    setExistingImage("");
+    // On crée une URL temporaire pour le cropper
+    const imageUrl = URL.createObjectURL(file);
+    setImageSrc(imageUrl); // ouvre le cropper avec cette image
+    setCropping(true); // afficher cropper
+
     setErrors((prev) => ({ ...prev, image: null }));
+  };
+
+  // quand cropper valide, on récupère l'image recadrée en blob
+  const onCropComplete = (croppedBlob) => {
+    setImage(croppedBlob); // stocker l'image recadrée
+    setCropping(false); // cacher le cropper
+    setImageSrc(null); // nettoyer url temporaire
+    setExistingImage(""); // on remplace l'ancienne image
+  };
+
+  const onCancelCrop = () => {
+    setCropping(false);
+    setImageSrc(null);
   };
 
   const handleSubmit = async (e) => {
@@ -77,6 +95,12 @@ const EditFamille = () => {
     }
   };
 
+  useEffect(() => {
+    return () => {
+      if (imageSrc) URL.revokeObjectURL(imageSrc);
+    };
+  }, [imageSrc]);
+
   return (
     <div className="flex">
       <Sidebar role="admin" />
@@ -102,7 +126,7 @@ const EditFamille = () => {
                   accept="image/*"
                   onChange={handleImageUpload}
                   className="hidden"
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || cropping} // désactive pendant crop
                 />
                 <div className="w-24 h-24 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 text-3xl">
                   {image || existingImage ? (
@@ -169,6 +193,13 @@ const EditFamille = () => {
               </button>
             </div>
           </form>
+          {cropping && imageSrc && (
+            <ImageCropper
+              imageSrc={imageSrc}
+              onCancel={onCancelCrop}
+              onCropComplete={onCropComplete}
+            />
+          )}
         </div>
       </div>
     </div>
