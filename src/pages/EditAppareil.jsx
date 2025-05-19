@@ -4,6 +4,7 @@ import Sidebar from "../components/SideBar";
 import DashboardHeader from "../components/DashboardHeader";
 import { FiArrowLeft, FiCamera } from "react-icons/fi";
 import api from "../utils/api";
+import ImageCropper from "../components/ImageCropper";
 
 const EditAppareil = () => {
   const { id } = useParams();
@@ -14,6 +15,8 @@ const EditAppareil = () => {
   const [familles, setFamilles] = useState([]);
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showCropper, setShowCropper] = useState(false);
+  const [rawImageUrl, setRawImageUrl] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -48,8 +51,21 @@ const EditAppareil = () => {
       return;
     }
 
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setRawImageUrl(reader.result);
+      setShowCropper(true);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleCropComplete = (croppedBlob) => {
+    const file = new File([croppedBlob], `appareil-${Date.now()}.jpeg`, {
+      type: "image/jpeg",
+    });
     setImage(file);
-    setExistingImage("");
+    setExistingImage(""); // On remplace l'ancienne image
+    setShowCropper(false);
     setErrors((prev) => ({ ...prev, image: null }));
   };
 
@@ -221,6 +237,13 @@ const EditAppareil = () => {
           </form>
         </div>
       </div>
+      {showCropper && rawImageUrl && (
+        <ImageCropper
+          imageSrc={rawImageUrl}
+          onCancel={() => setShowCropper(false)}
+          onCropComplete={handleCropComplete}
+        />
+      )}
     </div>
   );
 };
