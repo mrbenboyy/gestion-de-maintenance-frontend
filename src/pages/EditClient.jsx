@@ -16,6 +16,7 @@ const EditClient = () => {
     email: "",
     contrat: "SAV",
     sous_type_contrat: "unitaire",
+    mot_de_passe: "",
   });
   const [existingImage, setExistingImage] = useState("");
   const [newImage, setNewImage] = useState(null);
@@ -109,6 +110,11 @@ const EditClient = () => {
     if (!form.email.trim()) newErrors.email = "L'email est obligatoire";
     else if (!/^\S+@\S+\.\S+$/.test(form.email))
       newErrors.email = "Email invalide";
+    if (form.mot_de_passe && form.mot_de_passe.length < 6) {
+      newErrors.mot_de_passe =
+        "Le mot de passe doit faire au moins 6 caractères";
+    }
+
     return newErrors;
   };
 
@@ -277,6 +283,25 @@ const EditClient = () => {
                 />
                 {errors.email && (
                   <p className="text-red-500 text-sm mt-1">{errors.email}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm mb-1">
+                  Mot de passe (laisser vide pour ne pas changer)
+                </label>
+                <input
+                  type="password"
+                  name="mot_de_passe"
+                  placeholder="Nouveau mot de passe"
+                  value={form.mot_de_passe}
+                  onChange={handleChange}
+                  className="w-full border rounded px-4 py-2"
+                />
+                {errors.mot_de_passe && (
+                  <p className="text-red-500 text-sm mt-1">
+                    {errors.mot_de_passe}
+                  </p>
                 )}
               </div>
 
