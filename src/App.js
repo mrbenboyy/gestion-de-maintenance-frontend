@@ -33,6 +33,7 @@ import Layout from "./components/Layout";
 import PlanifierIntervention from "./components/PlannifierIntervention";
 import InterventionDetails from "./pages/InterventionDetails";
 import FicheVerification from "./components/FicheVerification";
+import Logout from "./pages/Logout";
 
 function App() {
   return (
@@ -288,6 +289,7 @@ function App() {
         <Route path="*" element={<Navigate to="/login" replace />} />
 
         <Route path="/unauthorized" element={<Unauthorized />} />
+        <Route path="/logout" element={<Logout />} />
       </Routes>
     </div>
   );
