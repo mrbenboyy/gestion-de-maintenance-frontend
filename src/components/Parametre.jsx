@@ -1,36 +1,100 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useCallback } from "react";
+import { jwtDecode } from "jwt-decode";
 import DashboardHeader from "./DashboardHeader";
+import api from "../utils/api";
+import ImageCropper from "../components/ImageCropper";
 
 const Parametre = () => {
+  const [userId, setUserId] = useState(null);
   const [avatarUrl, setAvatarUrl] = useState("/placeholder.svg");
   const [formData, setFormData] = useState({
-    name: "John Doe",
-    email: "john_doe@gmail.com",
+    nom: "",
+    email: "",
     password: "",
   });
+  const [selectedImageFile, setSelectedImageFile] = useState(null);
   const [toastVisible, setToastVisible] = useState(false);
+  const [showCropper, setShowCropper] = useState(false);
+  const [imageToCrop, setImageToCrop] = useState(null);
 
+  // Récupérer l'ID utilisateur depuis le token
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      const { id } = jwtDecode(token);
+      setUserId(id);
+    }
+  }, []);
+
+  // Charger les données utilisateur
+  useEffect(() => {
+    const fetchUserData = async () => {
+      if (!userId) return;
+      try {
+        const response = await api.get(`/users/${userId}`);
+        const { nom, email, image } = response.data;
+        setFormData({ nom, email, password: "" });
+
+        if (image) setAvatarUrl(`${process.env.REACT_APP_API_URL}${image}`);
+        else setAvatarUrl("/placeholder.svg"); // Fallback si pas d'image
+      } catch (error) {
+        console.error("Erreur chargement données:", error);
+      }
+    };
+    fetchUserData();
+  }, [userId]);
+
+  // Gestion du croppage
   const handleImageChange = (e) => {
     const file = e.target.files?.[0];
     if (file) {
-      const imageUrl = URL.createObjectURL(file);
-      setAvatarUrl(imageUrl);
+      setImageToCrop(URL.createObjectURL(file));
+      setShowCropper(true);
     }
   };
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
+  const handleCropComplete = useCallback(async (croppedImage) => {
+    const croppedFile = new File([croppedImage], "avatar.jpg", {
+      type: "image/jpeg",
+    });
+    setSelectedImageFile(croppedFile);
+    setAvatarUrl(URL.createObjectURL(croppedImage));
+    setShowCropper(false);
+  }, []);
 
-  const handleSubmit = (e) => {
+  // Soumission du formulaire
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setToastVisible(true);
-    setTimeout(() => setToastVisible(false), 3000);
+    const formPayload = new FormData();
+    formPayload.append("nom", formData.nom);
+    formPayload.append("email", formData.email);
+    if (formData.password)
+      formPayload.append("mot_de_passe", formData.password);
+    if (selectedImageFile) formPayload.append("image", selectedImageFile);
+
+    try {
+      await api.put(`/users/${userId}`, formPayload, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      setToastVisible(true);
+      setTimeout(() => setToastVisible(false), 3000);
+      setFormData((prev) => ({ ...prev, password: "" }));
+      setSelectedImageFile(null);
+    } catch (error) {
+      console.error("Erreur mise à jour:", error);
+    }
   };
 
   return (
     <div className="flex h-screen bg-gray-100">
+      {showCropper && (
+        <ImageCropper
+          imageSrc={imageToCrop}
+          onCancel={() => setShowCropper(false)}
+          onCropComplete={handleCropComplete}
+        />
+      )}
       <div className="flex-1 flex flex-col overflow-hidden">
         <DashboardHeader />
 
@@ -73,9 +137,14 @@ const Parametre = () => {
                     </label>
                     <input
                       id="name"
-                      name="name"
-                      value={formData.name}
-                      onChange={handleChange}
+                      name="nom"
+                      value={formData.nom}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          nom: e.target.value,
+                        }))
+                      }
                       className="bg-gray-50 border border-gray-200 rounded-md w-full p-2"
                     />
                   </div>
@@ -88,7 +157,12 @@ const Parametre = () => {
                       name="email"
                       type="email"
                       value={formData.email}
-                      onChange={handleChange}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          email: e.target.value,
+                        }))
+                      }
                       className="bg-gray-50 border border-gray-200 rounded-md w-full p-2"
                     />
                   </div>
@@ -99,12 +173,17 @@ const Parametre = () => {
                     Mot de passe
                   </label>
                   <input
-                    id="password"
-                    name="password"
+                    id="mot_de_passe"
+                    name="mot_de_passe"
                     type="password"
-                    placeholder="••••••••"
+                    placeholder="Laissez vide pour ne pas changer"
                     value={formData.password}
-                    onChange={handleChange}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        password: e.target.value,
+                      }))
+                    }
                     className="bg-gray-50 border border-gray-200 rounded-md w-full p-2"
                   />
                 </div>
