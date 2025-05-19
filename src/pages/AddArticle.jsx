@@ -4,6 +4,7 @@ import DashboardHeader from "../components/DashboardHeader";
 import { FiArrowLeft, FiCamera } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import api from "../utils/api";
+import ImageCropper from "../components/ImageCropper";
 
 const AddArticle = () => {
   const navigate = useNavigate();
@@ -13,10 +14,13 @@ const AddArticle = () => {
     famille_id: "",
     stock: 0,
   });
+  const [imageFile, setImageFile] = useState(null);
+  const [imageSrc, setImageSrc] = useState(null);
   const [image, setImage] = useState(null);
   const [errors, setErrors] = useState({});
   const [familles, setFamilles] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showCropper, setShowCropper] = useState(false);
 
   // Charger les familles depuis l'API
   useEffect(() => {
@@ -42,7 +46,7 @@ const AddArticle = () => {
     const file = e.target.files[0];
     if (!file) return;
 
-    // Validation de l'image
+    // Validation basique
     if (!file.type.startsWith("image/")) {
       setErrors((prev) => ({ ...prev, image: "Format d'image non supporté" }));
       return;
@@ -53,8 +57,29 @@ const AddArticle = () => {
       return;
     }
 
-    setImage(file);
-    setErrors((prev) => ({ ...prev, image: null }));
+    // On lit l'image en Data URL pour le cropper
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => {
+      setImageSrc(reader.result);
+      setShowCropper(true);
+      setErrors((prev) => ({ ...prev, image: null }));
+    };
+  };
+
+  // Quand on valide le crop, on reçoit un Blob qu'on met dans imageFile
+  const handleCropComplete = (croppedBlob) => {
+    // On crée un File à partir du Blob pour garder le nom et type
+    const croppedFile = new File([croppedBlob], "cropped.jpeg", {
+      type: "image/jpeg",
+    });
+    setImageFile(croppedFile);
+    setShowCropper(false);
+  };
+
+  const handleCropCancel = () => {
+    setShowCropper(false);
+    setImageSrc(null);
   };
 
   const handleSubmit = async (e) => {
@@ -82,12 +107,10 @@ const AddArticle = () => {
       formData.append("designation", form.designation);
       formData.append("famille_id", form.famille_id);
       formData.append("stock", form.stock);
-      if (image) formData.append("image", image);
+      if (imageFile) formData.append("image", imageFile);
 
       const response = await api.post("/articles", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
+        headers: { "Content-Type": "multipart/form-data" },
       });
 
       if (response.data) {
@@ -97,7 +120,6 @@ const AddArticle = () => {
       let errorMessage = "Erreur lors de la création";
 
       if (err.response) {
-        // Gestion des erreurs structurées du backend
         if (err.response.data.errors) {
           const backendErrors = err.response.data.errors.reduce(
             (acc, error) => {
@@ -113,9 +135,6 @@ const AddArticle = () => {
           setErrors({ server: errorMessage });
         }
       }
-
-      // Nettoyer l'image en cas d'erreur
-      if (image) URL.revokeObjectURL(image);
     } finally {
       setIsSubmitting(false);
     }
@@ -150,9 +169,9 @@ const AddArticle = () => {
                   disabled={isSubmitting}
                 />
                 <div className="w-24 h-24 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 text-3xl">
-                  {image ? (
+                  {imageFile ? (
                     <img
-                      src={URL.createObjectURL(image)}
+                      src={URL.createObjectURL(imageFile)}
                       alt="Preview"
                       className="w-full h-full rounded-full object-cover"
                     />
@@ -161,7 +180,7 @@ const AddArticle = () => {
                   )}
                 </div>
                 <span className="text-sm text-blue-600 mt-2 hover:underline">
-                  {image ? "Changer l'image" : "Ajouter une image"}
+                  {imageFile ? "Changer l'image" : "Ajouter une image"}
                 </span>
                 {errors.image && (
                   <p className="text-red-500 text-sm mt-1">{errors.image}</p>
@@ -276,6 +295,13 @@ const AddArticle = () => {
           </form>
         </div>
       </div>
+      {showCropper && (
+        <ImageCropper
+          imageSrc={imageSrc}
+          onCancel={handleCropCancel}
+          onCropComplete={handleCropComplete}
+        />
+      )}
     </div>
   );
 };
