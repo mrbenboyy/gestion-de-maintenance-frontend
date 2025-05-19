@@ -6,3 +6,7 @@ npm install recharts lucide-react
 npm install leaflet react-leaflet
 npm i react-toastify
 npm install date-fns@2.30.0
+
+image cropping:
+npm install react-easy-crop
+npm install --save @mui/material @emotion/react @emotion/styled

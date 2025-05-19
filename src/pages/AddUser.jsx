@@ -3,6 +3,7 @@ import DashboardHeader from "../components/DashboardHeader";
 import { FiArrowLeft, FiCamera } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import api from "../utils/api";
+import ImageCropper from "../components/ImageCropper";
 
 const AddUser = () => {
   const navigate = useNavigate();
@@ -19,15 +20,26 @@ const AddUser = () => {
   const [image, setImage] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showCropper, setShowCropper] = useState(false);
+  const [tempImageUrl, setTempImageUrl] = useState(null);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
   const handleImageUpload = (e) => {
-    if (e.target.files[0]) {
-      setImage(e.target.files[0]);
+    const file = e.target.files[0];
+    if (file) {
+      const imageUrl = URL.createObjectURL(file);
+      setTempImageUrl(imageUrl);
+      setShowCropper(true);
     }
+  };
+
+  const handleCropComplete = (croppedBlob) => {
+    setImage(croppedBlob);
+    setShowCropper(false);
+    URL.revokeObjectURL(tempImageUrl); // nettoyage
   };
 
   const handleSubmit = async (e) => {
@@ -230,6 +242,13 @@ const AddUser = () => {
               </button>
             </div>
           </form>
+          {showCropper && (
+            <ImageCropper
+              imageSrc={tempImageUrl}
+              onCancel={() => setShowCropper(false)}
+              onCropComplete={handleCropComplete}
+            />
+          )}
         </div>
       </div>
     </div>
