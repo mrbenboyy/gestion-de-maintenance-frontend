@@ -283,7 +283,7 @@ const InterventionForm = () => {
             <label className="block text-sm font-medium text-gray-700">
               Type de visite
             </label>
-            <div className="flex gap-2 flex-wrap">
+            <div className="flex gap-2 flex-wrap justify-evenly">
               {["premiere", "deuxieme", "curative"].map((type) => (
                 <button
                   key={type}
