@@ -50,7 +50,12 @@ const EditFamille = () => {
 
   // quand cropper valide, on récupère l'image recadrée en blob
   const onCropComplete = (croppedBlob) => {
-    setImage(croppedBlob); // stocker l'image recadrée
+    const mimeType = croppedBlob.type;
+    const extension = mimeType.split("/")[1];
+    const fileName = `image_${Date.now()}.${extension}`;
+    const fileWithName = new File([croppedBlob], fileName, { type: mimeType });
+    setImage(fileWithName);
+
     setCropping(false); // cacher le cropper
     setImageSrc(null); // nettoyer url temporaire
     setExistingImage(""); // on remplace l'ancienne image

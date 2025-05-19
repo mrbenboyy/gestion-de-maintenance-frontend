@@ -46,7 +46,12 @@ const AddFamille = () => {
   };
 
   const onCropComplete = (croppedBlob) => {
-    setImage(croppedBlob);
+    const mimeType = croppedBlob.type;
+    const extension = mimeType.split("/")[1];
+    const fileName = `image_${Date.now()}.${extension}`;
+    const fileWithName = new File([croppedBlob], fileName, { type: mimeType });
+    setImage(fileWithName);
+
     setShowCropper(false);
     setImageSrc(null);
   };
