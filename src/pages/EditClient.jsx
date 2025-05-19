@@ -3,6 +3,7 @@ import { FiArrowLeft, FiCamera } from "react-icons/fi";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../utils/api";
 import DashboardHeader from "../components/DashboardHeader";
+import ImageCropper from "../components/ImageCropper";
 
 const EditClient = () => {
   const navigate = useNavigate();
@@ -20,6 +21,9 @@ const EditClient = () => {
   const [newImage, setNewImage] = useState(null);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
+  const [cropperVisible, setCropperVisible] = useState(false);
+  const [imageSrc, setImageSrc] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(null);
 
   useEffect(() => {
     const fetchClient = async () => {
@@ -66,8 +70,34 @@ const EditClient = () => {
       return;
     }
 
-    setNewImage(file);
-    setErrors((prev) => ({ ...prev, image: null }));
+    // Lire le fichier en base64 pour le cropper
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => {
+      setImageSrc(reader.result);
+      setErrors((prev) => ({ ...prev, image: null }));
+
+      // Afficher le cropper
+      setCropperVisible(true);
+    };
+  };
+
+  // Fonction appelée à la validation du crop
+  const handleCropComplete = (croppedBlob) => {
+    setCropperVisible(false);
+
+    const croppedFile = new File([croppedBlob], "cropped.jpeg", {
+      type: "image/jpeg",
+    });
+    setNewImage(croppedFile);
+
+    setExistingImage(null);
+  };
+
+  // Annuler le crop
+  const handleCropCancel = () => {
+    setCropperVisible(false);
+    setImageSrc(null);
   };
 
   const validateForm = () => {
@@ -76,7 +106,9 @@ const EditClient = () => {
     if (!form.telephone.trim())
       newErrors.telephone = "Le téléphone est obligatoire";
     if (!form.adresse.trim()) newErrors.adresse = "L'adresse est obligatoire";
-    if (!/^\S+@\S+\.\S+$/.test(form.email)) newErrors.email = "Email invalide";
+    if (!form.email.trim()) newErrors.email = "L'email est obligatoire";
+    else if (!/^\S+@\S+\.\S+$/.test(form.email))
+      newErrors.email = "Email invalide";
     return newErrors;
   };
 
@@ -111,6 +143,16 @@ const EditClient = () => {
     }
   };
 
+  useEffect(() => {
+    if (newImage) {
+      const url = URL.createObjectURL(newImage);
+      setPreviewUrl(url);
+      return () => URL.revokeObjectURL(url);
+    } else {
+      setPreviewUrl(null);
+    }
+  }, [newImage]);
+
   return (
     <div className="flex">
       <div className="flex-1 bg-gray-100 min-h-screen">
@@ -138,17 +180,13 @@ const EditClient = () => {
                   className="hidden"
                 />
                 <div className="w-32 h-32 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 text-3xl">
-                  {newImage ? (
-                    <img
-                      src={URL.createObjectURL(newImage)}
-                      alt="Preview"
-                      className="w-full h-full rounded-full object-cover"
-                    />
+                  {previewUrl ? (
+                    <img src={previewUrl} alt="Preview" className="..." />
                   ) : existingImage ? (
                     <img
                       src={`${process.env.REACT_APP_API_URL}${existingImage}`}
                       alt="Current"
-                      className="w-full h-full rounded-full object-cover"
+                      className="..."
                     />
                   ) : (
                     <FiCamera />
@@ -306,6 +344,13 @@ const EditClient = () => {
           </form>
         </div>
       </div>
+      {cropperVisible && imageSrc && (
+        <ImageCropper
+          imageSrc={imageSrc}
+          onCancel={handleCropCancel}
+          onCropComplete={handleCropComplete}
+        />
+      )}
     </div>
   );
 };

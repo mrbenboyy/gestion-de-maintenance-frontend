@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from "react";
 import Cropper from "react-easy-crop";
 import Slider from "@mui/material/Slider";
-import { getCroppedImg } from "../utils/cropImage"; // fonction à créer plus bas
+import { getCroppedImg } from "../utils/cropImage";
 
 const ImageCropper = ({ imageSrc, onCancel, onCropComplete }) => {
   const [crop, setCrop] = useState({ x: 0, y: 0 });
