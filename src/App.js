@@ -34,6 +34,7 @@ import PlanifierIntervention from "./components/PlannifierIntervention";
 import InterventionDetails from "./pages/InterventionDetails";
 import FicheVerification from "./components/FicheVerification";
 import Logout from "./pages/Logout";
+import Parametre from "./components/Parametre";
 
 function App() {
   return (
@@ -290,6 +291,29 @@ function App() {
 
         <Route path="/unauthorized" element={<Unauthorized />} />
         <Route path="/logout" element={<Logout />} />
+
+        <Route
+          element={
+            <ProtectedRoute
+              allowedRoles={[
+                "admin",
+                "technicien",
+                "assistante",
+                "responsable_planning",
+                // "client",
+              ]}
+            />
+          }
+        >
+          <Route
+            path="/parametres"
+            element={
+              <Layout>
+                <Parametre />
+              </Layout>
+            }
+          />
+        </Route>
       </Routes>
     </div>
   );

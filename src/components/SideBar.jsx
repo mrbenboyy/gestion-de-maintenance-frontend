@@ -73,7 +73,7 @@ const Sidebar = ({ role }) => {
   }));
 
   const settingsItems = [
-    { icon: <Settings />, label: "Paramètres", href: "/settings" },
+    { icon: <Settings />, label: "Paramètres", href: "/parametres" },
     { icon: <LogOut />, label: "Déconnexion", href: "/logout" },
   ];
 
