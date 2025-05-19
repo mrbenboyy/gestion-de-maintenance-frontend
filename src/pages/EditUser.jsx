@@ -4,7 +4,6 @@ import { FiArrowLeft, FiCamera } from "react-icons/fi";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../utils/api";
 import ImageCropper from "../components/ImageCropper";
-import { getCroppedImg } from "../utils/cropImage";
 
 const EditUser = () => {
   const navigate = useNavigate();

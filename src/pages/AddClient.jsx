@@ -3,6 +3,7 @@ import DashboardHeader from "../components/DashboardHeader";
 import { FiArrowLeft, FiCamera } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import api from "../utils/api";
+import ImageCropper from "../components/ImageCropper";
 
 const AddClient = () => {
   const navigate = useNavigate();
@@ -20,11 +21,17 @@ const AddClient = () => {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const [isDirty, setIsDirty] = useState(false);
+  const [cropSrc, setCropSrc] = useState(null);
+  const [showCropper, setShowCropper] = useState(false);
+  const [isValid, setIsValid] = useState(false);
 
   // Validation en temps réel
   useEffect(() => {
     if (isDirty) {
-      validateForm();
+      const valid = validateForm();
+      setIsValid(valid);
+    } else {
+      setIsValid(false); // désactive tant que rien n'est modifié
     }
   }, [form, isDirty]);
 
@@ -38,21 +45,36 @@ const AddClient = () => {
     const file = e.target.files[0];
     if (!file) return;
 
-    // Validation de l'image
     if (!file.type.startsWith("image/")) {
       setErrors((prev) => ({ ...prev, image: "Format d'image non supporté" }));
       return;
     }
+
     if (file.size > 5 * 1024 * 1024) {
       setErrors((prev) => ({
         ...prev,
-        image: "L'image doit faire moins de 2MB",
+        image: "L'image doit faire moins de 5MB",
       }));
       return;
     }
 
-    setImage(file);
-    setErrors((prev) => ({ ...prev, image: null }));
+    const reader = new FileReader();
+    reader.onload = () => {
+      setCropSrc(reader.result);
+      setShowCropper(true);
+      setErrors((prev) => ({ ...prev, image: null }));
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleCropComplete = (croppedBlob) => {
+    setImage(croppedBlob);
+    setShowCropper(false);
+  };
+
+  const handleCropCancel = () => {
+    setCropSrc(null);
+    setShowCropper(false);
   };
 
   const validateForm = () => {
@@ -211,7 +233,7 @@ const AddClient = () => {
             <div className="mt-8 text-center">
               <button
                 type="submit"
-                disabled={loading || Object.keys(errors).length > 0}
+                disabled={loading || !isDirty || !isValid}
                 className="bg-red-500 text-white px-8 py-2 rounded-lg hover:bg-red-600 disabled:opacity-50 transition-opacity"
               >
                 {loading ? (
@@ -225,6 +247,13 @@ const AddClient = () => {
               </button>
             </div>
           </form>
+          {showCropper && cropSrc && (
+            <ImageCropper
+              imageSrc={cropSrc}
+              onCropComplete={handleCropComplete}
+              onCancel={handleCropCancel}
+            />
+          )}
         </div>
       </div>
     </div>
@@ -252,23 +281,28 @@ const AddClient = () => {
       value,
       onChange: handleChange,
       required: name !== "fax",
+      placeholder: "",
     };
 
     switch (name) {
       case "mot_de_passe":
-        return <input type="password" {...inputProps} placeholder="••••••••" />;
+        inputProps.placeholder = "Entrez un mot de passe sécurisé";
+        return <input type="password" {...inputProps} />;
       case "email":
-        return (
-          <input
-            type="email"
-            {...inputProps}
-            placeholder="adresse@exemple.com"
-          />
-        );
+        inputProps.placeholder = "adresse@exemple.com";
+        return <input type="email" {...inputProps} />;
       case "telephone":
-        return (
-          <input type="tel" {...inputProps} placeholder="+212 600-000000" />
-        );
+        inputProps.placeholder = "+212 600-000000";
+        return <input type="tel" {...inputProps} />;
+      case "nom":
+        inputProps.placeholder = "Nom de l'entreprise";
+        return <input type="text" {...inputProps} />;
+      case "adresse":
+        inputProps.placeholder = "Adresse complète";
+        return <input type="text" {...inputProps} />;
+      case "fax":
+        inputProps.placeholder = "Numéro de fax (optionnel)";
+        return <input type="text" {...inputProps} />;
       default:
         return <input type="text" {...inputProps} />;
     }
