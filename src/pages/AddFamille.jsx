@@ -4,13 +4,16 @@ import DashboardHeader from "../components/DashboardHeader";
 import { FiArrowLeft, FiCamera } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import api from "../utils/api";
+import ImageCropper from "../components/ImageCropper";
 
 const AddFamille = () => {
   const navigate = useNavigate();
   const [form, setForm] = useState({ nom: "" });
   const [image, setImage] = useState(null);
+  const [imageSrc, setImageSrc] = useState(null);
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showCropper, setShowCropper] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -32,8 +35,25 @@ const AddFamille = () => {
       return;
     }
 
-    setImage(file);
+    const reader = new FileReader();
+    reader.onload = () => {
+      setImageSrc(reader.result);
+      setShowCropper(true);
+    };
+    reader.readAsDataURL(file);
+
     setErrors((prev) => ({ ...prev, image: null }));
+  };
+
+  const onCropComplete = (croppedBlob) => {
+    setImage(croppedBlob);
+    setShowCropper(false);
+    setImageSrc(null);
+  };
+
+  const onCancelCrop = () => {
+    setShowCropper(false);
+    setImageSrc(null);
   };
 
   const handleSubmit = async (e) => {
@@ -100,7 +120,7 @@ const AddFamille = () => {
             onSubmit={handleSubmit}
             className="bg-white rounded-xl shadow-md p-8 max-w-4xl mx-auto"
           >
-            {/* Section Image */}
+            {/* Image & Cropper */}
             <div className="flex flex-col items-center mb-8">
               <label className="cursor-pointer">
                 <input
@@ -108,7 +128,7 @@ const AddFamille = () => {
                   accept="image/*"
                   onChange={handleImageUpload}
                   className="hidden"
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || showCropper}
                 />
                 <div className="w-24 h-24 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 text-3xl">
                   {image ? (
@@ -132,6 +152,14 @@ const AddFamille = () => {
                 Formats acceptés: JPG, PNG, SVG (max 5MB)
               </span>
             </div>
+
+            {showCropper && (
+              <ImageCropper
+                imageSrc={imageSrc}
+                onCancel={onCancelCrop}
+                onCropComplete={onCropComplete}
+              />
+            )}
 
             {/* Champ Nom */}
             <div className="grid grid-cols-1 gap-6 mb-8">

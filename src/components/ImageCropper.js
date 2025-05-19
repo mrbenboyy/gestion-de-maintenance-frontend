@@ -41,12 +41,14 @@ const ImageCropper = ({ imageSrc, onCancel, onCropComplete }) => {
       </div>
       <div className="mt-4 flex gap-4">
         <button
+          type="button"
           onClick={handleDone}
           className="bg-green-600 text-white px-4 py-2 rounded"
         >
           Valider
         </button>
         <button
+          type="button"
           onClick={onCancel}
           className="bg-red-600 text-white px-4 py-2 rounded"
         >
