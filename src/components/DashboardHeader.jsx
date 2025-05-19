@@ -35,6 +35,16 @@ const DashboardHeader = () => {
     fetchUserData();
   }, []);
 
+  useEffect(() => {
+    const handleUserUpdate = () => {
+      const storedUser = JSON.parse(localStorage.getItem("user"));
+      setUserData(storedUser);
+    };
+
+    window.addEventListener("userUpdate", handleUserUpdate);
+    return () => window.removeEventListener("userUpdate", handleUserUpdate);
+  }, []);
+
   return (
     <div className="flex justify-end items-center px-6 py-4 border-b bg-white">
       <div className="flex items-center gap-4">

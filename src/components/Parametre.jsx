@@ -4,6 +4,7 @@ import { jwtDecode } from "jwt-decode";
 import DashboardHeader from "./DashboardHeader";
 import api from "../utils/api";
 import ImageCropper from "../components/ImageCropper";
+import { FiCamera } from "react-icons/fi";
 
 const Parametre = () => {
   const [userId, setUserId] = useState(null);
@@ -77,6 +78,26 @@ const Parametre = () => {
       await api.put(`/users/${userId}`, formPayload, {
         headers: { "Content-Type": "multipart/form-data" },
       });
+      try {
+        // Récupérer les nouvelles données
+        const updatedResponse = await api.get(`/users/${userId}`);
+        const { nom, role, image } = updatedResponse.data;
+
+        // Mettre à jour le localStorage
+        const userData = JSON.parse(localStorage.getItem("user"));
+        const updatedUser = {
+          ...userData,
+          nom,
+          role,
+          image: image ? `${process.env.REACT_APP_API_URL}${image}` : null,
+        };
+        localStorage.setItem("user", JSON.stringify(updatedUser));
+
+        // Émettre un événement global
+        window.dispatchEvent(new CustomEvent("userUpdate"));
+      } catch (error) {
+        console.error("Erreur refresh données:", error);
+      }
       setToastVisible(true);
       setTimeout(() => setToastVisible(false), 3000);
       setFormData((prev) => ({ ...prev, password: "" }));
@@ -105,27 +126,39 @@ const Parametre = () => {
             </h1>
             <div className="bg-white shadow rounded-lg p-8">
               <div className="flex flex-col items-center justify-center mb-8">
-                <div className="relative">
-                  <div className="w-20 h-20 rounded-full border-2 border-gray-200 overflow-hidden">
-                    <img
-                      src={avatarUrl}
-                      alt="Profil"
-                      className="w-full h-full object-cover"
-                    />
+                {toastVisible && (
+                  <div className="bg-green-100 text-green-700 mb-4 p-4 rounded-md text-center">
+                    Vos informations ont été enregistrées avec succès.
                   </div>
-                  <label
-                    htmlFor="profile-upload"
-                    className="absolute -bottom-2 left-1/2 -translate-x-1/2 text-xs text-red-500 cursor-pointer hover:underline"
-                  >
-                    Modifier photo
+                )}
+                <div className="flex flex-col items-center ">
+                  <label className="cursor-pointer">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageChange}
+                      className="hidden"
+                    />
+                    <div className="w-24 h-24 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 text-3xl">
+                      {avatarUrl !== "/placeholder.svg" ? (
+                        <img
+                          src={avatarUrl}
+                          alt="Profil"
+                          className="w-full h-full rounded-full object-cover"
+                        />
+                      ) : (
+                        <FiCamera />
+                      )}
+                    </div>
+                    <span className="text-sm text-blue-500 mt-2 hover:underline">
+                      {avatarUrl !== "/placeholder.svg"
+                        ? "Changer la photo"
+                        : "Upload Photo"}
+                    </span>
                   </label>
-                  <input
-                    id="profile-upload"
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={handleImageChange}
-                  />
+                  <span className="text-sm text-gray-500 mt-1">
+                    Formats acceptés: JPG, PNG, JPEG (max 5MB)
+                  </span>
                 </div>
               </div>
 
@@ -197,12 +230,6 @@ const Parametre = () => {
                   </button>
                 </div>
               </form>
-
-              {toastVisible && (
-                <div className="mt-6 bg-green-100 text-green-700 p-4 rounded-md text-center">
-                  Vos informations ont été enregistrées avec succès.
-                </div>
-              )}
             </div>
           </div>
         </main>
