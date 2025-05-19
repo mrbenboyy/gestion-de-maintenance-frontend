@@ -4,6 +4,7 @@ import Sidebar from "../components/SideBar";
 import DashboardHeader from "../components/DashboardHeader";
 import { FiArrowLeft, FiCamera } from "react-icons/fi";
 import api from "../utils/api";
+import ImageCropper from "../components/ImageCropper";
 
 const EditArticle = () => {
   const { code } = useParams();
@@ -19,6 +20,8 @@ const EditArticle = () => {
   const [familles, setFamilles] = useState([]);
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [cropperOpen, setCropperOpen] = useState(false);
+  const [imageSrcToCrop, setImageSrcToCrop] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -60,9 +63,36 @@ const EditArticle = () => {
       return;
     }
 
-    setImage(file);
-    setExistingImage("");
+    // Créer un URL temporaire pour passer au cropper
+    const fileURL = URL.createObjectURL(file);
+
+    setImageSrcToCrop(fileURL); // On met à jour la source de l'image pour cropper
+    setCropperOpen(true); // On ouvre le cropper
+
     setErrors((prev) => ({ ...prev, image: null }));
+  };
+
+  // Lorsque le crop est validé, on récupère le blob recadré et on remplace l'image
+  const onCropComplete = (croppedBlob) => {
+    // Important : on transforme le blob en File pour compatibilité upload
+    const croppedFile = new File([croppedBlob], "cropped.jpeg", {
+      type: "image/jpeg",
+    });
+
+    setImage(croppedFile);
+    setExistingImage(""); // on supprime l'ancienne image
+    setCropperOpen(false);
+
+    // Libérer l'URL temporaire utilisée par le cropper
+    if (imageSrcToCrop) URL.revokeObjectURL(imageSrcToCrop);
+    setImageSrcToCrop(null);
+  };
+
+  // Annuler le cropper
+  const onCancelCrop = () => {
+    setCropperOpen(false);
+    if (imageSrcToCrop) URL.revokeObjectURL(imageSrcToCrop);
+    setImageSrcToCrop(null);
   };
 
   const handleChange = (e) => {
@@ -285,6 +315,13 @@ const EditArticle = () => {
           </form>
         </div>
       </div>
+      {cropperOpen && imageSrcToCrop && (
+        <ImageCropper
+          imageSrc={imageSrcToCrop}
+          onCancel={onCancelCrop}
+          onCropComplete={onCropComplete}
+        />
+      )}
     </div>
   );
 };
