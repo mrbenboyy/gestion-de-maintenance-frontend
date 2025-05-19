@@ -169,7 +169,6 @@ const InterventionForm = () => {
                   setFormData({ ...formData, date_planifiee: e.target.value })
                 }
               />
-              <CalendarIcon className="absolute right-3 top-2.5 h-5 w-5 text-gray-400 pointer-events-none" />
             </div>
           </div>
 
@@ -270,7 +269,7 @@ const InterventionForm = () => {
                 <option value="">Sélectionner le technicien</option>
                 {techniciens.map((tech) => (
                   <option key={tech.id} value={tech.id}>
-                    {tech.nom} ({tech.region} - {tech.depot})
+                    {tech.nom}
                   </option>
                 ))}
               </select>
