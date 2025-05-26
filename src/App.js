@@ -37,6 +37,7 @@ import Logout from "./pages/Logout";
 import Parametre from "./components/Parametre";
 import InterventionTracking from "./components/InterventionTracking";
 import InterventionDetail from "./components/InterventionDetail";
+import EditIntervention from "./pages/EditIntervention";
 
 function App() {
   return (
@@ -277,6 +278,14 @@ function App() {
             element={
               <Layout>
                 <InterventionDetail />
+              </Layout>
+            }
+          />
+          <Route
+            path="/intervention/:id/edit"
+            element={
+              <Layout>
+                <EditIntervention />
               </Layout>
             }
           />
