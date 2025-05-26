@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
+import api from "../utils/api";
 import DashboardHeader from "../components/DashboardHeader";
 import {
   ChevronDown,
@@ -11,49 +12,78 @@ import {
 } from "lucide-react";
 
 const InterventionTracking = () => {
-  // Données mockées
-  const interventions = [
-    {
-      id: "00001",
-      site: "Christine Brooks",
-      address: "089 Kutch Green Apt. 446",
-      date: "14 Feb 2019",
-      status: "Terminée",
-    },
-    {
-      id: "00002",
-      site: "Rosie Pearson",
-      address: "979 Immanuel Ferry Suite 520",
-      date: "14 Feb 2019",
-      status: "En cours",
-    },
-    {
-      id: "00003",
-      site: "Darnell Caldwell",
-      address: "8587 Frida Ports",
-      date: "14 Feb 2019",
-      status: "Reportée",
-    },
-    {
-      id: "00004",
-      site: "Gilbert Johnston",
-      address: "786 Destini Lake Suite 800",
-      date: "14 Feb 2019",
-      status: "Planifiée",
-    },
-  ];
+  const [interventions, setInterventions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [filters, setFilters] = useState({
+    status: "",
+    date: "",
+    client: "",
+  });
 
-  // Handlers
-  const handleReset = () => console.log("Resetting filters");
-  const handleView = (id) => console.log(`Viewing ${id}`);
-  const handleDelete = (id) => console.log(`Deleting ${id}`);
-  const handlePrev = () => console.log("Previous page");
-  const handleNext = () => console.log("Next page");
+  // Handlers manquants
+  const handleReset = () => {
+    setFilters({ status: "", date: "", client: "" });
+  };
+
+  const handleView = (id) => {
+    // Navigation vers la vue détaillée
+    console.log(`/intervention/${id}`);
+  };
+
+  const handleDelete = async (id) => {
+    try {
+      await api.delete(`/interventions/${id}`);
+      setInterventions((prev) => prev.filter((i) => i.id !== id));
+    } catch (err) {
+      setError("Échec de la suppression");
+    }
+  };
+
+  const handlePrev = () => {
+    // Implémenter la logique de pagination
+    console.log("Previous page");
+  };
+
+  const handleNext = () => {
+    // Implémenter la logique de pagination
+    console.log("Next page");
+  };
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const params = {};
+        if (filters.status) params.status = filters.status;
+        if (filters.date) params.date = filters.date;
+        if (filters.client) params.client = filters.client;
+
+        const response = await api.get("/interventions", { params });
+        setInterventions(response.data);
+        setError("");
+      } catch (err) {
+        setError("Erreur lors du chargement des données");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, [filters]);
+
+  const statusMap = {
+    planifiee: "Planifiée",
+    en_cours: "En cours",
+    terminee: "Terminée",
+    annulee: "Annulée",
+    reportee: "Reportée",
+  };
+
+  if (loading) return <div>Chargement...</div>;
+  if (error) return <div className="p-6 text-red-500">{error}</div>;
 
   return (
     <div className="min-h-screen bg-gray-50">
       <DashboardHeader />
-
       <div className="p-6 max-w-7xl mx-auto">
         <h1 className="text-xl font-semibold mb-6">Suivi des interventions</h1>
 
@@ -120,27 +150,29 @@ const InterventionTracking = () => {
                 <tr key={item.id} className="hover:bg-gray-50">
                   <td className="py-4 px-4 text-sm text-gray-500">{item.id}</td>
                   <td className="py-4 px-4 text-sm text-gray-900">
-                    {item.site}
+                    {item.site_nom}
                   </td>
                   <td className="py-4 px-4 text-sm text-gray-500">
-                    {item.address}
+                    {item.site?.adresse || "Non renseignée"}
                   </td>
                   <td className="py-4 px-4 text-sm text-gray-500">
-                    {item.date}
+                    {new Date(item.date_planifiee).toLocaleDateString()}
                   </td>
                   <td className="py-4 px-4 text-sm">
                     <span
                       className={`px-3 py-1 text-xs font-medium rounded-full ${
-                        item.status === "Terminée"
+                        item.status === "terminee"
                           ? "bg-teal-100 text-teal-800"
-                          : item.status === "En cours"
+                          : item.status === "en_cours"
                           ? "bg-purple-100 text-purple-800"
-                          : item.status === "Reportée"
+                          : item.status === "reportee"
                           ? "bg-red-100 text-red-800"
+                          : item.status === "annulee"
+                          ? "bg-gray-100 text-gray-800"
                           : "bg-orange-100 text-orange-800"
                       }`}
                     >
-                      {item.status}
+                      {statusMap[item.status]}
                     </span>
                   </td>
                   <td className="py-4 px-4 text-sm">
