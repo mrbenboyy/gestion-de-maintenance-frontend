@@ -153,7 +153,7 @@ const InterventionTracking = () => {
                     {item.site_nom}
                   </td>
                   <td className="py-4 px-4 text-sm text-gray-500">
-                    {item.site?.adresse || "Non renseignée"}
+                    {item.site_adresse || "Non renseignée"}
                   </td>
                   <td className="py-4 px-4 text-sm text-gray-500">
                     {new Date(item.date_planifiee).toLocaleDateString("fr-FR")}
