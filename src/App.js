@@ -36,6 +36,7 @@ import FicheVerification from "./components/FicheVerification";
 import Logout from "./pages/Logout";
 import Parametre from "./components/Parametre";
 import InterventionTracking from "./components/InterventionTracking";
+import InterventionDetail from "./components/InterventionDetail";
 
 function App() {
   return (
@@ -268,6 +269,14 @@ function App() {
             element={
               <Layout>
                 <InterventionTracking />
+              </Layout>
+            }
+          />
+          <Route
+            path="/responsable/intervention/:id"
+            element={
+              <Layout>
+                <InterventionDetail />
               </Layout>
             }
           />

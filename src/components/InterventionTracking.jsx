@@ -11,6 +11,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import ConfirmationModal from "../components/ConfirmationModal";
+import { useNavigate } from "react-router-dom";
 
 const InterventionTracking = () => {
   const [interventions, setInterventions] = useState([]);
@@ -22,15 +23,14 @@ const InterventionTracking = () => {
     client: "",
   });
   const [deleteConfirmingId, setDeleteConfirmingId] = useState(null);
+  const navigate = useNavigate();
 
-  // Handlers manquants
   const handleReset = () => {
     setFilters({ status: "", date: "", client: "" });
   };
 
   const handleView = (id) => {
-    // Navigation vers la vue détaillée
-    console.log(`/intervention/${id}`);
+    navigate(`/responsable/intervention/${id}`);
   };
 
   const handleConfirmDelete = async () => {
