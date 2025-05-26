@@ -53,9 +53,7 @@ const InterventionDetail = () => {
   const handleDelete = async () => {
     try {
       await api.delete(`/interventions/${id}`);
-      navigate(
-        userRole === "technicien" ? "/technicien" : "/responsable_planning"
-      );
+      navigate(-1);
     } catch (err) {
       setError("Échec de la suppression");
     } finally {
@@ -171,8 +169,15 @@ const InterventionDetail = () => {
 
             {(userRole === "responsable_planning" || userRole === "admin") && (
               <button
-                onClick={() => setShowDeleteModal(true)}
-                className="flex items-center justify-center gap-2 px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 flex-1"
+                onClick={() =>
+                  intervention.status !== "en_cours" && setShowDeleteModal(true)
+                }
+                className={`flex items-center justify-center gap-2 px-4 py-2 text-white rounded-md flex-1 ${
+                  intervention.status === "en_cours"
+                    ? "bg-gray-400 cursor-not-allowed"
+                    : "bg-red-500 hover:bg-red-600"
+                }`}
+                disabled={intervention.status === "en_cours"}
               >
                 <Trash2 className="w-4 h-4" />
                 Supprimer
