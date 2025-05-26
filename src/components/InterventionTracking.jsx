@@ -10,6 +10,7 @@ import {
   ArrowLeft,
   ArrowRight,
 } from "lucide-react";
+import ConfirmationModal from "../components/ConfirmationModal";
 
 const InterventionTracking = () => {
   const [interventions, setInterventions] = useState([]);
@@ -20,6 +21,7 @@ const InterventionTracking = () => {
     date: "",
     client: "",
   });
+  const [deleteConfirmingId, setDeleteConfirmingId] = useState(null);
 
   // Handlers manquants
   const handleReset = () => {
@@ -31,13 +33,22 @@ const InterventionTracking = () => {
     console.log(`/intervention/${id}`);
   };
 
-  const handleDelete = async (id) => {
+  const handleConfirmDelete = async () => {
     try {
-      await api.delete(`/interventions/${id}`);
-      setInterventions((prev) => prev.filter((i) => i.id !== id));
+      await api.delete(`/interventions/${deleteConfirmingId}`);
+      setInterventions((prev) =>
+        prev.filter((i) => i.id !== deleteConfirmingId)
+      );
+      setError("");
     } catch (err) {
       setError("Échec de la suppression");
+    } finally {
+      setDeleteConfirmingId(null);
     }
+  };
+
+  const handleCancelDelete = () => {
+    setDeleteConfirmingId(null);
   };
 
   const handlePrev = () => {
@@ -83,6 +94,13 @@ const InterventionTracking = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <ConfirmationModal
+        isOpen={!!deleteConfirmingId}
+        onClose={handleCancelDelete}
+        onConfirm={handleConfirmDelete}
+        title="Supprimer l'intervention"
+        message="Êtes-vous sûr de vouloir supprimer cette intervention ? Cette action est irréversible."
+      />
       <DashboardHeader />
       <div className="p-6 max-w-7xl mx-auto">
         <h1 className="text-xl font-semibold mb-6">Suivi des interventions</h1>
@@ -185,7 +203,7 @@ const InterventionTracking = () => {
                         Voir
                       </button>
                       <button
-                        onClick={() => handleDelete(item.id)}
+                        onClick={() => setDeleteConfirmingId(item.id)}
                         className="text-red-500 flex items-center h-8 px-2 rounded-md hover:bg-gray-100"
                       >
                         <Trash2 size={16} className="mr-1" />
